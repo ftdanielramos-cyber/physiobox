@@ -43,6 +43,12 @@ export default function ClientesPage() {
     carregarClientes()
   }
 
+  async function apagarCliente(clienteId: string) {
+    if (!confirm('Tens a certeza? Todos os dados do cliente serão apagados.')) return
+    await supabase.from('clientes').delete().eq('id', clienteId)
+    carregarClientes()
+  }
+
   return (
     <main className="min-h-screen bg-gray-50">
       <div className="max-w-2xl mx-auto px-4 py-8">
@@ -85,14 +91,16 @@ export default function ClientesPage() {
         ) : (
           <div className="flex flex-col gap-3">
             {clientes.map(c => (
-              <a key={c.id} href={`/clientes/${c.id}`}
-                className="bg-white rounded-2xl px-6 py-4 shadow-sm hover:shadow-md transition flex items-center justify-between">
-                <div>
+              <div key={c.id} className="bg-white rounded-2xl px-6 py-4 shadow-sm hover:shadow-md transition flex items-center justify-between">
+                <a href={`/clientes/${c.id}`} className="flex-1">
                   <p className="font-medium text-gray-800">{c.nome}</p>
                   <p className="text-sm text-gray-400">{c.telefone || c.email || '—'}</p>
-                </div>
-                <span className="text-gray-300">→</span>
-              </a>
+                </a>
+                <button onClick={() => apagarCliente(c.id)}
+                  className="text-gray-300 hover:text-red-400 transition ml-4 text-xl leading-none">
+                  ×
+                </button>
+              </div>
             ))}
           </div>
         )}
