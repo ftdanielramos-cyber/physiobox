@@ -2,70 +2,58 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase'
-import { useParams, useRouter } from 'next/navigation'
 
-// ... (mantém os teus types Cliente e Sessao aqui)
+type Cliente = {
+  id: string
+  nome: string
+  email: string
+  telefone: string
+  data_nasc: string
+}
 
-export default function FichaClientePage() {
-  const params = useParams()
-  const router = useRouter()
-  
-  // A correção está aqui: se params.id falhar, tentamos extrair da URL manualmente
-  const [id, setId] = useState<string | null>(null)
-  
-  useEffect(() => {
-    const idCapturado = params?.id || params?.cliente_id || params?.id_cliente || window.location.pathname.split('/')[2];
-    setId(idCapturado as string);
-  }, [params]);
-
-  const [cliente, setCliente] = useState<any>(null)
-  const [sessoes, setSessoes] = useState<any[]>([])
+export default function ClientesPage() {
+  const [clientes, setClientes] = useState<Cliente[]>([])
   const [loading, setLoading] = useState(true)
-  const [erroFatal, setErroFatal] = useState<string | null>(null)
+  const [mostrarForm, setMostrarForm] = useState(false)
+  const [nome, setNome] = useState('')
+  const [email, setEmail] = useState('')
+  const [telefone, setTelefone] = useState('')
+  const [dataNasc, setDataNasc] = useState('')
   const supabase = createClient()
 
   useEffect(() => {
-    if (id) {
-      carregarDados();
-    } else if (id === undefined) {
-      // Aguarda um pouco para o params carregar
-    } else {
-      setErroFatal("ID DO CLIENTE NÃO ENCONTRADO NA URL.");
-      setLoading(false);
-    }
-  }, [id]);
+    carregarClientes()
+  }, [])
 
-  async function carregarDados() {
-    if (!id) return;
-    try {
-      setLoading(true)
-      const { data: dadosCliente, error: errCliente } = await supabase
-        .from('clientes')
-        .select('*')
-        .or(`id.eq.${id},cliente_id.eq.${id},id_cliente.eq.${id}`)
-        .maybeSingle()
-      
-      if (errCliente || !dadosCliente) {
-        setErroFatal(`CLIENTE NÃO ENCONTRADO (ID: ${id})`)
-        return
-      }
-
-      setCliente(dadosCliente)
-      const idRealDoCliente = dadosCliente.id || dadosCliente.cliente_id || dadosCliente.id_cliente
-
-      const { data: dadosSessoes } = await supabase
-        .from('sessoes')
-        .select('*')
-        .eq('cliente_id', idRealDoCliente)
-
-      setSessoes(dadosSessoes || [])
-    } catch (e) {
-      setErroFatal("ERRO AO LIGAR À BASE DE DADOS")
-    } finally {
-      setLoading(false)
-    }
+  async function carregarClientes() {
+    const { data } = await supabase.from('clientes').select('*').order('nome')
+    setClientes(data || [])
+    setLoading(false)
   }
 
-  // ... (mantém o resto das tuas funções criarNovaSessao, formatarData e o JSX exatamente como estavam)
-  // Certifica-te apenas que fechas a função e o export default corretamente
-}
+  async function adicionarCliente(e: React.FormEvent) {
+    e.preventDefault()
+    const { data: { user } } = await supabase.auth.getUser()
+    await supabase.from('clientes').insert({
+      nome, email, telefone, data_nasc: dataNasc || null,
+      created_by: user?.id
+    })
+    setNome(''); setEmail(''); setTelefone(''); setDataNasc('')
+    setMostrarForm(false)
+    carregarClientes()
+  }
+
+  return (
+    <main className="min-h-screen bg-gray-50">
+      <div className="max-w-2xl mx-auto px-4 py-8">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <a href="/dashboard" className="text-sm text-gray-400 hover:text-gray-600">← Dashboard</a>
+            <h1 className="text-2xl font-semibold text-gray-800 mt-1">Clientes</h1>
+          </div>
+          <button
+            onClick={() => setMostrarForm(!mostrarForm)}
+            className="bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-blue-700 transition">
+            + Novo cliente
+          </button>
+        </div>
