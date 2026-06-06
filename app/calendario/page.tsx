@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase'
 
 type Agendamento = {
   id: string
-  string // Corrigido aqui
+  data: string
   hora_inicio: string
   hora_fim: string
   tipo: string
@@ -50,17 +50,16 @@ export default function CalendarioPage() {
   async function criarAgendamento(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
-    const { data } = await supabase.auth.getUser(); // Correção aqui
-    const user = data.user; // Acesse o usuário
-    const dataStr = `${mesAtual.getFullYear()}-${String(mesAtual.getMonth() + 1).padStart(2, '0')}-${String(diaSelected).padStart(2, '0')}`;
+    const { data: { user } } = await supabase.auth.getUser()
+    const dataStr = `${mesAtual.getFullYear()}-${String(mesAtual.getMonth() + 1).padStart(2, '0')}-${String(diaSelected).padStart(2, '0')}`
     await supabase.from('agendamentos').insert({
-        cliente_id: clienteId || null,
-        fisio_id: user?.id,
-        dataStr, // Certifique-se de que a chave está correta
-        hora_inicio: horaInicio || null,
-        hora_fim: horaFim || null,
-        tipo: tipo || null,
-        notas: notas || null,
+      cliente_id: clienteId || null,
+      fisio_id: user?.id,
+      data: dataStr,
+      hora_inicio: horaInicio || null,
+      hora_fim: horaFim || null,
+      tipo: tipo || null,
+      notas: notas || null,
     })
     setClienteId(''); setHoraInicio(''); setHoraFim(''); setTipo(''); setNotas('')
     setMostrarForm(false)
@@ -92,14 +91,12 @@ export default function CalendarioPage() {
   const diasSemana = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom']
   const agendamentosDiaSelected = diaSelected ? agendamentosNoDia(diaSelected) : []
   const dataSelectedStr = diaSelected ? new Date(mesAtual.getFullYear(), mesAtual.getMonth(), diaSelected).toLocaleDateString('pt-PT', { weekday: 'long', day: 'numeric', month: 'long' }) : ''
-
-  const inputClass = "w-full bg-[#1e1e1e] border border-[#333] rounded-xl px-4 py-3 text-sm text-white uppercase tracking-wider placeholder:text-[#666] focus:outline-none focus:border-[#3b82f6]"
+  const inputClass = "w-full bg-[#0d0d0d] border border-[#1e1e1e] rounded-xl px-4 py-3 text-sm text-white uppercase tracking-wider placeholder:text-[#555] focus:outline-none focus:border-[#3b82f6]"
 
   return (
     <main className="min-h-screen bg-[#0a0a0a]">
       <div className="max-w-2xl mx-auto px-4 py-10">
-        <a href="/dashboard" className="text-[#3b82f6] text-xs tracking-[0.15em] uppercase">← Dashboard</a>
-        <h1 className="text-4xl font-extrabold text-white uppercase tracking-tight mt-2 mb-8">Calendário</h1>
+        <h1 className="text-4xl font-extrabold text-white uppercase tracking-tight mb-8">Calendário</h1>
 
         <div className="bg-[#111] border border-[#1a1a1a] rounded-xl p-5 mb-4">
           <div className="flex items-center justify-between mb-5">
@@ -126,11 +123,10 @@ export default function CalendarioPage() {
               const hoje = new Date()
               const isHoje = hoje.getDate() === dia && hoje.getMonth() === mesAtual.getMonth() && hoje.getFullYear() === mesAtual.getFullYear()
               const isSelected = diaSelected === dia
-
               return (
                 <button key={dia} onClick={() => { setDiaSelected(dia); setMostrarForm(false) }}
-                  className={`aspect-square flex flex-col items-center justify-center rounded-xl text-xs font-bold uppercase tracking-wider transition
-                    ${isSelected ? 'bg-[#3b82f6] text-white' : isHoje ? 'bg-[#1a1a1a] text-[#3b82f6]' : 'text-[#888] hover:text-white hover:bg-[#1a1a1a]'}`}>
+                  className={`aspect-square flex flex-col items-center justify-center rounded-xl text-xs font-bold tracking-wider transition
+                    ${isSelected ? 'bg-[#3b82f6] text-white' : isHoje ? 'bg-[#1a1a1a] text-[#3b82f6]' : 'text-white hover:bg-[#1a1a1a]'}`}>
                   <span>{dia}</span>
                   {temAg && <div className={`w-1 h-1 rounded-full mt-0.5 ${isSelected ? 'bg-white' : 'bg-[#3b82f6]'}`} />}
                 </button>
@@ -144,7 +140,7 @@ export default function CalendarioPage() {
             <div className="flex items-center justify-between mb-4">
               <p className="text-xs text-[#3b82f6] tracking-[0.15em] uppercase font-bold capitalize">{dataSelectedStr}</p>
               <button onClick={() => setMostrarForm(!mostrarForm)}
-                className="bg-[#3b82f6] text-white text-[10px] font-bold uppercase tracking-widest px-3 py-2 rounded-xl hover:bg-[#1d4ed8] transition">
+                className="bg-[#1a1a1a] border border-[#2a2a2a] text-white text-[10px] font-bold uppercase tracking-widest px-3 py-2 rounded-xl hover:border-[#3b82f6] transition">
                 + Agendar
               </button>
             </div>
@@ -157,11 +153,11 @@ export default function CalendarioPage() {
                 </select>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <p className="text-[9px] text-[#666] tracking-widest uppercase mb-2">Hora Início</p>
+                    <p className="text-[9px] text-[#555] tracking-widest uppercase mb-2">Hora Início</p>
                     <input type="time" value={horaInicio} onChange={e => setHoraInicio(e.target.value)} className={inputClass} />
                   </div>
                   <div>
-                    <p className="text-[9px] text-[#666] tracking-widest uppercase mb-2">Hora Fim</p>
+                    <p className="text-[9px] text-[#555] tracking-widest uppercase mb-2">Hora Fim</p>
                     <input type="time" value={horaFim} onChange={e => setHoraFim(e.target.value)} className={inputClass} />
                   </div>
                 </div>
@@ -169,11 +165,11 @@ export default function CalendarioPage() {
                 <textarea value={notas} onChange={e => setNotas(e.target.value)} placeholder="Notas" rows={2} className={`${inputClass} resize-none`} />
                 <div className="flex gap-2">
                   <button type="submit" disabled={loading}
-                    className="bg-[#3b82f6] text-white text-xs font-bold uppercase tracking-widest px-4 py-2.5 rounded-xl hover:bg-[#1d4ed8] transition disabled:opacity-50">
+                    className="bg-[#1a1a1a] border border-[#2a2a2a] text-white text-xs font-bold uppercase tracking-widest px-4 py-2.5 rounded-xl hover:border-[#3b82f6] transition disabled:opacity-50">
                     Guardar
                   </button>
                   <button type="button" onClick={() => setMostrarForm(false)}
-                    className="text-[#888] text-xs font-bold uppercase tracking-widest px-4 py-2.5 rounded-xl hover:text-white transition">
+                    className="text-[#555] text-xs font-bold uppercase tracking-widest px-4 py-2.5 rounded-xl hover:text-white transition">
                     Cancelar
                   </button>
                 </div>
@@ -181,7 +177,7 @@ export default function CalendarioPage() {
             )}
 
             {agendamentosDiaSelected.length === 0 ? (
-              <p className="text-[10px] text-[#666] uppercase tracking-wider">Sem agendamentos.</p>
+              <p className="text-[10px] text-[#555] uppercase tracking-wider">Sem agendamentos.</p>
             ) : (
               <div className="flex flex-col gap-3">
                 {agendamentosDiaSelected.map(a => (
@@ -191,15 +187,15 @@ export default function CalendarioPage() {
                       <div>
                         <p className="text-xs font-bold text-white uppercase tracking-wider">{a.clientes?.nome || 'Sem Cliente'}</p>
                         {(a.hora_inicio || a.hora_fim) && (
-                          <p className="text-[10px] text-[#666] uppercase tracking-wider mt-1">
+                          <p className="text-[10px] text-[#555] uppercase tracking-wider mt-1">
                             {a.hora_inicio?.slice(0, 5)}{a.hora_fim ? ` → ${a.hora_fim.slice(0, 5)}` : ''}
                           </p>
                         )}
-                        {a.tipo && <p className="text-[10px] text-[#666] uppercase tracking-wider">{a.tipo}</p>}
-                        {a.notas && <p className="text-[10px] text-[#666] uppercase tracking-wider">{a.notas}</p>}
+                        {a.tipo && <p className="text-[10px] text-[#555] uppercase tracking-wider">{a.tipo}</p>}
+                        {a.notas && <p className="text-[10px] text-[#555] uppercase tracking-wider">{a.notas}</p>}
                       </div>
                     </div>
-                    <button onClick={() => apagarAgendamento(a.id)} className="text-[#888] hover:text-red-500 transition text-xl ml-4">×</button>
+                    <button onClick={() => apagarAgendamento(a.id)} className="text-[#333] hover:text-red-500 transition text-xl ml-4">×</button>
                   </div>
                 ))}
               </div>
