@@ -58,16 +58,23 @@ export default function TabBar() {
   }
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-[#0d0d0d] border-t border-[#1a1a1a] px-2 pb-6 pt-2 z-50">
-      <div className="max-w-lg mx-auto flex items-center justify-around">
+    <nav style={{
+      position: 'fixed', bottom: 0, left: 0, right: 0,
+      background: '#0d0d0d', borderTop: '1px solid #1a1a1a',
+      padding: '8px 8px 24px', zIndex: 50
+    }}>
+      <div style={{ maxWidth: '500px', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-around' }}>
         {tabs.map(tab => {
           const active = isActive(tab.href)
           return (
             <a key={tab.href} href={tab.href}
-              className="flex flex-col items-center gap-1 px-4 py-1 rounded-xl transition"
-              style={{ color: active ? '#3b82f6' : '#444' }}>
+              style={{
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px',
+                padding: '4px 16px', borderRadius: '12px', textDecoration: 'none',
+                color: active ? '#3b82f6' : '#444'
+              }}>
               {tab.icon(active)}
-              <span className="text-[9px] font-bold uppercase tracking-widest">
+              <span style={{ fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
                 {tab.label}
               </span>
             </a>
