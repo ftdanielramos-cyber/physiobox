@@ -4,16 +4,16 @@
 
 @layer base {
   * {
-    color: #ffffff !important;
     letter-spacing: 0.02em;
   }
   body {
     background-color: #0a0a0a;
+    color: #ffffff;
     font-weight: 600;
   }
   input, textarea, select {
     color: #ffffff !important;
-    background-color: #111111 !important;
+    background-color: #0d0d0d !important;
   }
   input::placeholder, textarea::placeholder {
     color: #555555 !important;
