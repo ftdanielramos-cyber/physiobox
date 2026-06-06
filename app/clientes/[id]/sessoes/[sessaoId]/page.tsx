@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useParams } from 'next/navigation'
 import Voltar from '@/components/Voltar'
@@ -42,6 +42,10 @@ export default function SessaoPage() {
   const [sets, setSets] = useState<Set[]>([{ numero: 1, repeticoes: 10, carga: 0 }])
   const supabase = createClient()
 
+  const holdRef = useRef<any>(null)
+  const setsRef = useRef(sets)
+  setsRef.current = sets
+
   useEffect(() => { carregarRegistos() }, [sessaoId])
 
   async function carregarRegistos() {
@@ -60,10 +64,29 @@ export default function SessaoPage() {
   }
 
   function ajustarSet(index: number, campo: 'repeticoes' | 'carga', delta: number) {
-    const novos = [...sets]
-    const novoValor = Math.max(0, novos[index][campo] + delta)
-    novos[index][campo] = novoValor
-    setSets(novos)
+    setSets(prev => {
+      const novos = [...prev]
+      novos[index] = { ...novos[index], [campo]: Math.max(0, novos[index][campo] + delta) }
+      return novos
+    })
+  }
+
+  function iniciarHold(index: number, campo: 'repeticoes' | 'carga', delta: number) {
+    ajustarSet(index, campo, delta)
+    let velocidade = 400
+    function passo() {
+      ajustarSet(index, campo, delta)
+      velocidade = Math.max(50, velocidade - 60)
+      holdRef.current = setTimeout(passo, velocidade)
+    }
+    holdRef.current = setTimeout(passo, velocidade)
+  }
+
+  function pararHold() {
+    if (holdRef.current) {
+      clearTimeout(holdRef.current)
+      holdRef.current = null
+    }
   }
 
   async function adicionarRegisto(e: React.FormEvent) {
@@ -102,7 +125,7 @@ export default function SessaoPage() {
     wrap: { maxWidth: '600px', margin: '0 auto' },
     input: { width: '100%', background: '#0d0d0d', border: '1px solid #1e1e1e', borderRadius: '12px', padding: '14px 16px', fontSize: '14px', color: '#fff', outline: 'none' } as React.CSSProperties,
     label: { fontSize: '9px', color: '#555', textTransform: 'uppercase' as const, letterSpacing: '0.15em', marginBottom: '10px' },
-    stepBtn: { width: '38px', height: '38px', borderRadius: '10px', background: '#1d1d1d', border: '1px solid #2a2a2a', color: '#fff', fontSize: '20px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 } as React.CSSProperties,
+    stepBtn: { width: '40px', height: '40px', borderRadius: '10px', background: '#1d1d1d', border: '1px solid #2a2a2a', color: '#fff', fontSize: '22px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, userSelect: 'none' as const, touchAction: 'manipulation' as const } as React.CSSProperties,
   }
 
   const tipoBtn = (ativo: boolean): React.CSSProperties => ({
@@ -119,6 +142,14 @@ export default function SessaoPage() {
     background: ativo ? '#1d4ed8' : '#0d0d0d',
     border: ativo ? '1px solid #2563eb' : '1px solid #1e1e1e',
     color: ativo ? '#fff' : '#666', transition: 'all 0.15s',
+  })
+
+  const holdProps = (index: number, campo: 'repeticoes' | 'carga', delta: number) => ({
+    onMouseDown: () => iniciarHold(index, campo, delta),
+    onMouseUp: pararHold,
+    onMouseLeave: pararHold,
+    onTouchStart: (e: React.TouchEvent) => { e.preventDefault(); iniciarHold(index, campo, delta) },
+    onTouchEnd: pararHold,
   })
 
   return (
@@ -144,7 +175,6 @@ export default function SessaoPage() {
         {mostrarForm && (
           <form onSubmit={adicionarRegisto} style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '20px', marginBottom: '24px' }}>
 
-            {/* TIPO */}
             <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
               <button type="button" onClick={() => setTipo('exercicio')} style={tipoBtn(tipo === 'exercicio')}>Exercício</button>
               <button type="button" onClick={() => setTipo('intervencao')} style={tipoBtn(tipo === 'intervencao')}>Intervenção</button>
@@ -183,23 +213,21 @@ export default function SessaoPage() {
                       </div>
 
                       <div style={{ display: 'flex', gap: '16px' }}>
-                        {/* REPS */}
                         <div style={{ flex: 1 }}>
                           <p style={{ fontSize: '8px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '8px', textAlign: 'center' }}>Reps</p>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <button type="button" onClick={() => ajustarSet(i, 'repeticoes', -1)} style={c.stepBtn}>−</button>
+                            <button type="button" {...holdProps(i, 'repeticoes', -1)} style={c.stepBtn}>−</button>
                             <span style={{ flex: 1, textAlign: 'center', fontSize: '20px', fontWeight: 800, color: '#fff' }}>{set.repeticoes}</span>
-                            <button type="button" onClick={() => ajustarSet(i, 'repeticoes', 1)} style={c.stepBtn}>+</button>
+                            <button type="button" {...holdProps(i, 'repeticoes', 1)} style={c.stepBtn}>+</button>
                           </div>
                         </div>
 
-                        {/* CARGA */}
                         <div style={{ flex: 1 }}>
                           <p style={{ fontSize: '8px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '8px', textAlign: 'center' }}>Carga kg</p>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <button type="button" onClick={() => ajustarSet(i, 'carga', -1)} style={c.stepBtn}>−</button>
+                            <button type="button" {...holdProps(i, 'carga', -1)} style={c.stepBtn}>−</button>
                             <span style={{ flex: 1, textAlign: 'center', fontSize: '20px', fontWeight: 800, color: '#fff' }}>{set.carga}</span>
-                            <button type="button" onClick={() => ajustarSet(i, 'carga', 1)} style={c.stepBtn}>+</button>
+                            <button type="button" {...holdProps(i, 'carga', 1)} style={c.stepBtn}>+</button>
                           </div>
                         </div>
                       </div>
@@ -233,7 +261,6 @@ export default function SessaoPage() {
           </form>
         )}
 
-        {/* LISTA DE REGISTOS */}
         {registos.length === 0 ? (
           <p style={{ fontSize: '11px', color: '#333', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Sem registos nesta sessão.</p>
         ) : (
