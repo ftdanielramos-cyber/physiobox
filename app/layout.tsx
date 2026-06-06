@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Barlow_Condensed } from "next/font/google";
 import "./globals.css";
 
@@ -8,9 +8,22 @@ const barlow = Barlow_Condensed({
   variable: "--font-barlow",
 });
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  themeColor: "#0a0a0a",
+}
+
 export const metadata: Metadata = {
   title: "Physiobox",
   description: "Performance & Fisioterapia Desportiva",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Physiobox",
+  },
 };
 
 export default function RootLayout({
