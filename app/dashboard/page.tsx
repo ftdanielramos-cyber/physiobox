@@ -42,8 +42,16 @@ export default function Dashboard() {
       const fim = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).toISOString().split('T')[0]
       const { count: sm } = await supabase.from('sessoes').select('*', { count: 'exact', head: true }).gte('data', inicio).lte('data', fim)
       setSessoesMes(sm || 0)
-      const { data: ag } = await supabase.from('agendamentos').select('*, clientes(nome)').gte('data', hoje).order('data').order('hora_inicio').limit(3)
-      setProximos(ag || [])
+      const { data: ag } = await supabase.from('agendamentos').select('*, clientes(nome)').gte('data', hoje).order('data').order('hora_inicio').limit(10)
+      // Filtrar: se for hoje, só mostrar os que ainda não passaram (hora_inicio >= agora)
+      const agora = new Date()
+      const horaAgora = agora.toTimeString().slice(0, 5) // "HH:MM"
+      const filtrados = (ag || []).filter(a => {
+        if (a.data > hoje) return true // dias futuros: sempre mostrar
+        if (!a.hora_inicio) return true // sem hora: mostrar
+        return a.hora_inicio.slice(0, 5) > horaAgora // hoje: só se ainda não passou
+      }).slice(0, 3)
+      setProximos(filtrados)
     }
     carregarStats()
   }, [])
@@ -130,29 +138,6 @@ export default function Dashboard() {
           ))}
         </div>
 
-        {/* PRÓXIMOS AGENDAMENTOS */}
-        {proximos.length > 0 && (
-          <div style={{ marginBottom: '32px' }}>
-            <p style={s.sectionLbl}>Próximos Agendamentos</p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              {proximos.map(a => (
-                <a key={a.id} href={a.cliente_id ? `/clientes/${a.cliente_id}` : '/calendario'} style={s.card}>
-                  <div style={{ width: '4px', height: '40px', background: '#3b82f6', borderRadius: '2px', flexShrink: 0 }} />
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={s.cardTitle}>{a.clientes?.nome || 'Sem Cliente'}</p>
-                    <p style={s.cardSub}>
-                      {new Date(a.data + 'T00:00:00').toLocaleDateString('pt-PT', { day: 'numeric', month: 'short' })}
-                      {a.hora_inicio ? ` · ${a.hora_inicio.slice(0, 5)}` : ''}
-                      {a.tipo ? ` · ${a.tipo}` : ''}
-                    </p>
-                  </div>
-                  <span style={s.arrow}>›</span>
-                </a>
-              ))}
-            </div>
-          </div>
-        )}
-
         {/* NAVEGAÇÃO */}
         <p style={s.sectionLbl}>Navegação</p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '32px' }}>
@@ -182,6 +167,29 @@ export default function Dashboard() {
             <span style={s.arrow}>›</span>
           </a>
         </div>
+
+        {/* PRÓXIMOS AGENDAMENTOS */}
+        {proximos.length > 0 && (
+          <div style={{ marginTop: '32px' }}>
+            <p style={s.sectionLbl}>Próximos Agendamentos</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {proximos.map(a => (
+                <a key={a.id} href={a.cliente_id ? `/clientes/${a.cliente_id}` : '/calendario'} style={s.card}>
+                  <div style={{ width: '4px', height: '40px', background: '#3b82f6', borderRadius: '2px', flexShrink: 0 }} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={s.cardTitle}>{a.clientes?.nome || 'Sem Cliente'}</p>
+                    <p style={s.cardSub}>
+                      {new Date(a.data + 'T00:00:00').toLocaleDateString('pt-PT', { day: 'numeric', month: 'short' })}
+                      {a.hora_inicio ? ` · ${a.hora_inicio.slice(0, 5)}` : ''}
+                      {a.tipo ? ` · ${a.tipo}` : ''}
+                    </p>
+                  </div>
+                  <span style={s.arrow}>›</span>
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
 
       </div>
     </main>
