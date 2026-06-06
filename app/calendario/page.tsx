@@ -113,7 +113,7 @@ export default function CalendarioPage() {
 
           <div className="grid grid-cols-7 gap-1 mb-2">
             {diasSemana.map(d => (
-              <div key={d} className="text-center text-[9px] text-[#333] tracking-widest uppercase py-1">{d}</div>
+              <div key={d} className="text-center text-[9px] text-[#666] tracking-widest uppercase py-1">{d}</div>
             ))}
           </div>
 
@@ -129,7 +129,7 @@ export default function CalendarioPage() {
               return (
                 <button key={dia} onClick={() => { setDiaSelected(dia); setMostrarForm(false) }}
                   className={`aspect-square flex flex-col items-center justify-center rounded-xl text-xs font-bold uppercase tracking-wider transition
-                    ${isSelected ? 'bg-[#1d4ed8] text-white' : isHoje ? 'bg-[#1a1a1a] text-[#3b82f6]' : 'text-[#444] hover:text-white hover:bg-[#161616]'}`}>
+                    ${isSelected ? 'bg-[#1d4ed8] text-white' : isHoje ? 'bg-[#1a1a1a] text-[#3b82f6]' : 'text-[#888] hover:text-white hover:bg-[#1a1a1a]'}`}>
                   <span>{dia}</span>
                   {temAg && <div className={`w-1 h-1 rounded-full mt-0.5 ${isSelected ? 'bg-white' : 'bg-[#3b82f6]'}`} />}
                 </button>
