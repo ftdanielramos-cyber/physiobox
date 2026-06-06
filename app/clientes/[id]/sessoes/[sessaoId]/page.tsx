@@ -43,8 +43,7 @@ export default function SessaoPage() {
   const supabase = createClient()
 
   const holdRef = useRef<any>(null)
-  const setsRef = useRef(sets)
-  setsRef.current = sets
+  const touchUsadoRef = useRef(false)
 
   useEffect(() => { carregarRegistos() }, [sessaoId])
 
@@ -145,11 +144,21 @@ export default function SessaoPage() {
   })
 
   const holdProps = (index: number, campo: 'repeticoes' | 'carga', delta: number) => ({
-    onMouseDown: () => iniciarHold(index, campo, delta),
+    onMouseDown: () => {
+      if (touchUsadoRef.current) return
+      iniciarHold(index, campo, delta)
+    },
     onMouseUp: pararHold,
     onMouseLeave: pararHold,
-    onTouchStart: (e: React.TouchEvent) => { e.preventDefault(); iniciarHold(index, campo, delta) },
-    onTouchEnd: pararHold,
+    onTouchStart: (e: React.TouchEvent) => {
+      e.preventDefault()
+      touchUsadoRef.current = true
+      iniciarHold(index, campo, delta)
+    },
+    onTouchEnd: (e: React.TouchEvent) => {
+      e.preventDefault()
+      pararHold()
+    },
   })
 
   return (
