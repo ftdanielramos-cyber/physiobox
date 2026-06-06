@@ -7,17 +7,11 @@ export default function Dashboard() {
   const [totalClientes, setTotalClientes] = useState<number | null>(null)
   const [sessoesHoje, setSessoesHoje] = useState<number | null>(null)
   const [sessoesMes, setSessoesMes] = useState<number | null>(null)
-  const [nome, setNome] = useState('')
   const [proximos, setProximos] = useState<any[]>([])
   const supabase = createClient()
 
   useEffect(() => {
     async function carregarStats() {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (user) {
-        const { data: perfil } = await supabase.from('profiles').select('nome').eq('id', user.id).single()
-        setNome(perfil?.nome?.split(' ')[0] || '')
-      }
       const { count: c } = await supabase.from('clientes').select('*', { count: 'exact', head: true })
       setTotalClientes(c || 0)
       const hoje = new Date().toISOString().split('T')[0]
@@ -34,12 +28,10 @@ export default function Dashboard() {
   }, [])
 
   const hoje = new Date().toLocaleDateString('pt-PT', { weekday: 'long', day: 'numeric', month: 'long' })
-  const inicial = nome ? nome.charAt(0).toUpperCase() : 'P'
 
   const s = {
     page: { minHeight: '100vh', background: '#0a0a0a', padding: '40px 16px 110px' } as React.CSSProperties,
     wrap: { maxWidth: '600px', margin: '0 auto' },
-    avatar: { width: '56px', height: '56px', borderRadius: '16px', background: '#1d4ed8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px', fontWeight: 800, color: '#fff', flexShrink: 0 } as React.CSSProperties,
     statCard: { background: '#141414', border: '1px solid #222', borderRadius: '14px', padding: '18px 8px', textAlign: 'center' as const },
     statNum: { fontSize: '34px', fontWeight: 800, color: '#3b82f6', lineHeight: 1 },
     statLbl: { fontSize: '9px', color: '#666', letterSpacing: '0.12em', textTransform: 'uppercase' as const, marginTop: '6px' },
@@ -56,14 +48,11 @@ export default function Dashboard() {
       <div style={s.wrap}>
 
         {/* HEADER */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '28px', borderBottom: '1px solid #1a1a1a', paddingBottom: '24px' }}>
-          <div style={s.avatar}>{inicial}</div>
-          <div>
-            <p style={{ color: '#3b82f6', fontSize: '10px', letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: '4px' }}>{hoje}</p>
-            <h1 style={{ fontSize: '30px', fontWeight: 800, color: '#fff', textTransform: 'uppercase', letterSpacing: '-0.01em', lineHeight: 1 }}>
-              {nome ? `Olá, ${nome}` : 'Physiobox'}
-            </h1>
-          </div>
+        <div style={{ marginBottom: '28px', borderBottom: '1px solid #1a1a1a', paddingBottom: '24px' }}>
+          <p style={{ color: '#3b82f6', fontSize: '10px', letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: '4px' }}>{hoje}</p>
+          <h1 style={{ fontSize: '30px', fontWeight: 800, color: '#fff', textTransform: 'uppercase', letterSpacing: '-0.01em', lineHeight: 1 }}>
+            Olá, Physiobox
+          </h1>
         </div>
 
         {/* STATS */}
