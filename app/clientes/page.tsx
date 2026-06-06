@@ -93,18 +93,21 @@ export default function ClientesPage() {
         </div>
 
         {/* PESQUISA */}
-        <div className="relative mb-5">
-          <svg width="18" height="18" fill="none" stroke="#555" strokeWidth="2" viewBox="0 0 24 24"
-            style={{ position: 'absolute', left: '18px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
+        <div className="relative mb-6">
+          {/* linha decorativa esquerda */}
+          <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '3px', background: 'linear-gradient(180deg, #3b82f6 0%, transparent 100%)', borderRadius: '2px', zIndex: 1 }} />
+          <svg width="16" height="16" fill="none" stroke="#3b82f6" strokeWidth="2" viewBox="0 0 24 24"
+            style={{ position: 'absolute', left: '20px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', opacity: 0.7 }}>
             <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
           </svg>
           <input value={pesquisa} onChange={e => setPesquisa(e.target.value)}
-            placeholder="PESQUISAR CLIENTE"
-            style={{ paddingLeft: '52px', paddingRight: '18px' }}
-            className="w-full bg-[#0d0d0d] border border-[#2a2a2a] rounded-2xl px-5 py-4 text-sm font-bold text-white uppercase tracking-[0.15em] placeholder:text-[#2e2e2e] focus:outline-none focus:border-[#3b82f6] focus:bg-[#0f0f0f] transition-all" />
+            placeholder="pesquisar..."
+            className="w-full bg-transparent border-0 px-5 py-4 text-base font-light text-white placeholder:text-[#2a2a2a] focus:outline-none transition-all"
+            style={{ paddingLeft: '48px', paddingRight: pesquisa ? '44px' : '18px', letterSpacing: '0.2em', borderBottom: `2px solid ${pesquisa ? '#3b82f6' : '#1e1e1e'}`, transition: 'border-color 0.2s' }}
+          />
           {pesquisa && (
             <button onClick={() => setPesquisa('')}
-              style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#555', padding: '4px' }}>
+              style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#3b82f6', padding: '4px' }}>
               <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
                 <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
               </svg>
@@ -120,8 +123,12 @@ export default function ClientesPage() {
         ) : (
           <div className="flex flex-col gap-2">
             {clientesFiltrados.map(c => (
-              <div key={c.id} className="relative group flex items-center bg-[#111] border border-[#1a1a1a] rounded-xl hover:border-[#252525] transition-colors">
-                <a href={`/clientes/${c.id}`} className="flex items-center gap-3 flex-1 min-w-0 px-4 py-4">
+              <div key={c.id} className="relative group flex items-center bg-[#111] border border-[#1a1a1a] rounded-xl hover:border-[#2a2a2a] transition-colors">
+                <a href={`/clientes/${c.id}`} className="flex items-center gap-4 flex-1 min-w-0 px-5 py-4">
+                  {/* ícone pessoa */}
+                  <svg width="18" height="18" fill="none" stroke="white" strokeWidth="1.6" viewBox="0 0 24 24" style={{ flexShrink: 0, opacity: 0.5 }}>
+                    <circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+                  </svg>
                   <div className="min-w-0">
                     <p className="text-sm font-bold uppercase tracking-wider truncate text-white">{c.nome}</p>
                   </div>
