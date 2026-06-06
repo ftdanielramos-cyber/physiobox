@@ -10,5 +10,13 @@
     text-transform: uppercase;
     font-weight: 800;
     letter-spacing: 0.05em;
+    color: #ffffff !important;
+  }
+  p, span, a, label, input, textarea, select, button, li {
+    color: inherit;
+  }
+  body {
+    color: #ffffff;
+    background-color: #0a0a0a;
   }
 }
