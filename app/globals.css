@@ -5,12 +5,18 @@
 @layer base {
   * {
     letter-spacing: 0.02em;
-    box-sizing: border-box;
   }
   body {
     background-color: #0a0a0a;
     color: #ffffff;
     font-weight: 600;
+  }
+  a {
+    color: inherit !important;
+    text-decoration: none !important;
+  }
+  a:visited {
+    color: inherit !important;
   }
   input, textarea, select {
     color: #ffffff !important;
@@ -23,8 +29,5 @@
   option {
     background-color: #111111 !important;
     color: #ffffff !important;
-  }
-  table, tr, td, th {
-    all: unset;
   }
 }
