@@ -2,69 +2,53 @@
 
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase'
-import { useRouter } from 'next/navigation'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const router = useRouter()
   const supabase = createClient()
 
   async function handleLogin(e: React.FormEvent) {
-  e.preventDefault()
-  setLoading(true)
-  setError('')
-
-  const { error } = await supabase.auth.signInWithPassword({ email, password })
-
-  if (error) {
-    setError('Email ou password incorretos')
-    setLoading(false)
-    return
+    e.preventDefault()
+    setLoading(true)
+    setError('')
+    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    if (error) {
+      setError('Email ou password incorretos')
+      setLoading(false)
+      return
+    }
+    window.location.href = '/dashboard'
   }
 
-  window.location.href = '/dashboard'
-}
+  const inputClass = "w-full bg-[#111] border border-[#1e1e1e] rounded-xl px-4 py-3 text-sm text-white uppercase tracking-wider placeholder:text-[#333] focus:outline-none focus:border-[#3b82f6]"
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="bg-white p-8 rounded-2xl shadow-sm w-full max-w-sm">
-        <h1 className="text-2xl font-semibold text-gray-800 mb-1">Entrar</h1>
-        <p className="text-gray-500 text-sm mb-6">Physiobox</p>
+    <main className="min-h-screen flex items-center justify-center bg-[#0a0a0a]">
+      <div className="px-8 w-full max-w-sm">
+        <p className="text-[#3b82f6] text-xs tracking-[0.2em] uppercase mb-3">Physiobox</p>
+        <h1 className="text-5xl font-extrabold text-white uppercase tracking-tight leading-none mb-10">
+          Entrar
+        </h1>
 
         <form onSubmit={handleLogin} className="flex flex-col gap-4">
           <div>
-            <label className="text-sm text-gray-600 mb-1 block">Email</label>
-            <input
-              type="email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="email@exemplo.com"
-              required
-            />
+            <p className="text-[9px] text-[#333] tracking-widest uppercase mb-2">Email</p>
+            <input type="email" value={email} onChange={e => setEmail(e.target.value)}
+              placeholder="email@exemplo.com" required className={inputClass} />
           </div>
           <div>
-            <label className="text-sm text-gray-600 mb-1 block">Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="••••••••"
-              required
-            />
+            <p className="text-[9px] text-[#333] tracking-widest uppercase mb-2">Password</p>
+            <input type="password" value={password} onChange={e => setPassword(e.target.value)}
+              placeholder="••••••••" required className={inputClass} />
           </div>
 
-          {error && <p className="text-red-500 text-sm">{error}</p>}
+          {error && <p className="text-red-500 text-xs uppercase tracking-wider">{error}</p>}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-blue-600 text-white py-3 rounded-xl font-medium hover:bg-blue-700 transition disabled:opacity-50"
-          >
+          <button type="submit" disabled={loading}
+            className="w-full bg-[#1d4ed8] text-white py-4 rounded-xl font-bold uppercase text-xs tracking-[0.2em] hover:bg-[#1e40af] transition disabled:opacity-50 mt-2">
             {loading ? 'A entrar...' : 'Entrar'}
           </button>
         </form>
