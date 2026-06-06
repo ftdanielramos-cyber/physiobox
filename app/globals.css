@@ -4,19 +4,23 @@
 
 @layer base {
   * {
+    color: #ffffff !important;
     letter-spacing: 0.02em;
   }
-  h1, h2, h3 {
-    text-transform: uppercase;
-    font-weight: 800;
-    letter-spacing: 0.05em;
-    color: #ffffff !important;
-  }
-  p, span, a, label, input, textarea, select, button, li {
-    color: inherit;
-  }
   body {
-    color: #ffffff;
     background-color: #0a0a0a;
+    font-weight: 600;
+  }
+  input, textarea, select {
+    color: #ffffff !important;
+    background-color: #111111 !important;
+  }
+  input::placeholder, textarea::placeholder {
+    color: #555555 !important;
+    font-weight: 400;
+  }
+  option {
+    background-color: #111111 !important;
+    color: #ffffff !important;
   }
 }
