@@ -93,15 +93,23 @@ export default function ClientesPage() {
         </div>
 
         {/* PESQUISA */}
-        <div className="relative mb-4">
-          <svg width="15" height="15" fill="none" stroke="#444" strokeWidth="2" viewBox="0 0 24 24"
-            style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)' }}>
+        <div className="relative mb-5">
+          <svg width="18" height="18" fill="none" stroke="#555" strokeWidth="2" viewBox="0 0 24 24"
+            style={{ position: 'absolute', left: '18px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
             <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
           </svg>
           <input value={pesquisa} onChange={e => setPesquisa(e.target.value)}
-            placeholder="Pesquisar cliente..."
-            style={{ paddingLeft: '40px' }}
-            className="w-full bg-[#111] border border-[#1a1a1a] rounded-xl px-4 py-3 text-sm text-white tracking-wider placeholder:text-[#444] focus:outline-none focus:border-[#3b82f6] transition-colors" />
+            placeholder="PESQUISAR CLIENTE"
+            style={{ paddingLeft: '52px', paddingRight: '18px' }}
+            className="w-full bg-[#0d0d0d] border border-[#2a2a2a] rounded-2xl px-5 py-4 text-sm font-bold text-white uppercase tracking-[0.15em] placeholder:text-[#2e2e2e] focus:outline-none focus:border-[#3b82f6] focus:bg-[#0f0f0f] transition-all" />
+          {pesquisa && (
+            <button onClick={() => setPesquisa('')}
+              style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#555', padding: '4px' }}>
+              <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            </button>
+          )}
         </div>
 
         {/* LISTA */}
@@ -122,10 +130,10 @@ export default function ClientesPage() {
                 {/* LIXO */}
                 <button
                   onClick={() => apagarCliente(c.id)}
-                  className="flex items-center justify-center w-8 h-8 rounded-lg text-[#333] hover:text-red-500 transition-all mx-3"
+                  className="flex items-center justify-center w-9 h-9 rounded-xl text-[#666] hover:text-red-400 hover:bg-[#1a1a1a] transition-all mx-3"
                   style={{ background: 'none', border: 'none', cursor: 'pointer', flexShrink: 0 }}
                   aria-label="Eliminar cliente">
-                  <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <svg width="17" height="17" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                     <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/>
                     <path d="M9 6V4h6v2"/>
                   </svg>
