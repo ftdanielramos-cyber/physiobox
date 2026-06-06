@@ -30,10 +30,22 @@ export default function ClientesPage() {
     setLoading(false)
   }
 
-  async function adicionarCliente(e: React.FormEvent) {
+async function adicionarCliente(e: React.FormEvent) {
     e.preventDefault()
     const { data: { user } } = await supabase.auth.getUser()
-    await supabase.from('clientes').insert({ nome, email, telefone, data_nasc: dataNasc || null, created_by: user?.id })
+    if (!user) {
+      alert('Sessão expirada. Faz login outra vez.')
+      window.location.href = '/login'
+      return
+    }
+    const { error } = await supabase.from('clientes').insert({
+      nome, email: email || null, telefone: telefone || null,
+      data_nasc: dataNasc || null, created_by: user.id
+    })
+    if (error) {
+      alert('Erro ao guardar: ' + error.message)
+      return
+    }
     setNome(''); setEmail(''); setTelefone(''); setDataNasc('')
     setMostrarForm(false)
     carregarClientes()
