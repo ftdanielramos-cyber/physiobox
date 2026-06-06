@@ -57,3 +57,46 @@ export default function ClientesPage() {
             + Novo cliente
           </button>
         </div>
+        {mostrarForm && (
+          <form onSubmit={adicionarCliente} className="bg-white rounded-2xl p-6 shadow-sm mb-6 flex flex-col gap-4">
+            <h2 className="font-medium text-gray-800">Novo cliente</h2>
+            <input value={nome} onChange={e => setNome(e.target.value)} placeholder="Nome completo" required
+              className="border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            <input value={email} onChange={e => setEmail(e.target.value)} placeholder="Email" type="email"
+              className="border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            <input value={telefone} onChange={e => setTelefone(e.target.value)} placeholder="Telefone"
+              className="border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            <input value={dataNasc} onChange={e => setDataNasc(e.target.value)} type="date"
+              className="border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            <div className="flex gap-2">
+              <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-blue-700 transition">
+                Guardar
+              </button>
+              <button type="button" onClick={() => setMostrarForm(false)} className="text-gray-500 px-4 py-2 rounded-xl text-sm hover:bg-gray-100 transition">
+                Cancelar
+              </button>
+            </div>
+          </form>
+        )}
+        {loading ? (
+          <p className="text-gray-400 text-sm">A carregar...</p>
+        ) : clientes.length === 0 ? (
+          <p className="text-gray-400 text-sm">Ainda não tens clientes.</p>
+        ) : (
+          <div className="flex flex-col gap-3">
+            {clientes.map(c => (
+              <a key={c.id} href={`/clientes/${c.id}`}
+                className="bg-white rounded-2xl px-6 py-4 shadow-sm hover:shadow-md transition flex items-center justify-between">
+                <div>
+                  <p className="font-medium text-gray-800">{c.nome}</p>
+                  <p className="text-sm text-gray-400">{c.telefone || c.email || '—'}</p>
+                </div>
+                <span className="text-gray-300">→</span>
+              </a>
+            ))}
+          </div>
+        )}
+      </div>
+    </main>
+  )
+}
