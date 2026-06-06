@@ -23,7 +23,7 @@ export default function LoginPage() {
     window.location.href = '/dashboard'
   }
 
-  const inputClass = "w-full bg-[#111] border border-[#1e1e1e] rounded-xl px-4 py-3 text-sm text-white uppercase tracking-wider placeholder:text-[#333] focus:outline-none focus:border-[#3b82f6]"
+  const inputClass = "w-full bg-[#111] border border-[#2a2a2a] rounded-lg px-4 py-3 text-sm text-white uppercase tracking-wider placeholder:text-[#555] focus:outline-none focus:border-[#3b82f6]"
 
   return (
     <main className="min-h-screen flex items-center justify-center bg-[#0a0a0a]">
@@ -35,20 +35,20 @@ export default function LoginPage() {
 
         <form onSubmit={handleLogin} className="flex flex-col gap-4">
           <div>
-            <p className="text-[9px] text-[#333] tracking-widest uppercase mb-2">Email</p>
+            <p className="text-[#555] text-[9px] tracking-widest uppercase mb-2">Email</p>
             <input type="email" value={email} onChange={e => setEmail(e.target.value)}
               placeholder="email@exemplo.com" required className={inputClass} />
           </div>
           <div>
-            <p className="text-[9px] text-[#333] tracking-widest uppercase mb-2">Password</p>
+            <p className="text-[#555] text-[9px] tracking-widest uppercase mb-2">Password</p>
             <input type="password" value={password} onChange={e => setPassword(e.target.value)}
               placeholder="••••••••" required className={inputClass} />
           </div>
 
-          {error && <p className="text-red-500 text-xs uppercase tracking-wider">{error}</p>}
+          {error && <p className="text-red-400 text-xs uppercase tracking-wider">{error}</p>}
 
           <button type="submit" disabled={loading}
-            className="w-full bg-[#1d4ed8] text-white py-4 rounded-xl font-bold uppercase text-xs tracking-[0.2em] hover:bg-[#1e40af] transition disabled:opacity-50 mt-2">
+            className="w-full bg-[#1a1a1a] border border-[#2a2a2a] text-white py-4 rounded-lg font-bold uppercase text-xs tracking-[0.2em] hover:bg-[#222] hover:border-[#3b82f6] transition disabled:opacity-50 mt-2">
             {loading ? 'A entrar...' : 'Entrar'}
           </button>
         </form>
