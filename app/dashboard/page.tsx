@@ -1,4 +1,3 @@
-Set-Content -Path "app\dashboard\page.tsx" -Encoding UTF8 -Value @"
 'use client'
 
 import { useEffect, useState } from 'react'
@@ -101,14 +100,14 @@ export default function Dashboard() {
               <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
             </div>
             <p className="flex-1 text-[14px] font-medium text-white uppercase tracking-[0.04em]">Clientes</p>
-            <span className="text-white/25 text-xl">&rsaquo;</span>
+            <span className="text-white/25 text-xl">›</span>
           </a>
           <a href="/calendario" className="bg-white/[0.03] border border-white/[0.06] rounded-xl px-4 py-3.5 flex items-center gap-3.5 no-underline hover:border-white/[0.12] transition-colors">
             <div className="w-10 h-10 rounded-lg bg-white/[0.04] border border-white/[0.06] flex items-center justify-center text-blue-400 shrink-0">
               <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
             </div>
             <p className="flex-1 text-[14px] font-medium text-white uppercase tracking-[0.04em]">Agendamentos</p>
-            <span className="text-white/25 text-xl">&rsaquo;</span>
+            <span className="text-white/25 text-xl">›</span>
           </a>
         </div>
 
@@ -116,4 +115,3 @@ export default function Dashboard() {
     </main>
   )
 }
-"@
