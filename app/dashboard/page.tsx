@@ -61,32 +61,32 @@ export default function Dashboard() {
 
         <div className="flex flex-col gap-2 mb-6">
           <a href="/clientes" className="bg-[#111] border border-[#1a1a1a] rounded-xl p-4 flex items-center gap-4 hover:border-[#2a2a2a] transition">
-            <div className="w-10 h-10 rounded-lg bg-[#161616] border border-[#242424] flex items-center justify-center text-[#3b82f6] text-lg">
+            <div className="w-10 h-10 rounded-lg bg-[#161616] border border-[#242424] flex items-center justify-center text-[#3b82f6]">
               <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
             </div>
             <div className="flex-1">
-              <p className="text-sm font-bold text-[#e0e0e0] uppercase tracking-wider">Clientes</p>
-              <p className="text-[10px] text-[#3a3a3a] uppercase tracking-wider mt-0.5">Fichas e sessões</p>
+              <p className="text-sm font-bold text-white uppercase tracking-wider">Clientes</p>
+              <p className="text-[10px] text-[#444] uppercase tracking-wider mt-0.5">Fichas e sessões</p>
             </div>
-            <span className="text-[#252525] text-xl">›</span>
+            <span className="text-[#333] text-xl">›</span>
           </a>
 
           <a href="/calendario" className="bg-[#111] border border-[#1a1a1a] rounded-xl p-4 flex items-center gap-4 hover:border-[#2a2a2a] transition">
-            <div className="w-10 h-10 rounded-lg bg-[#161616] border border-[#242424] flex items-center justify-center text-[#3b82f6] text-lg">
+            <div className="w-10 h-10 rounded-lg bg-[#161616] border border-[#242424] flex items-center justify-center text-[#3b82f6]">
               <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
             </div>
             <div className="flex-1">
-              <p className="text-sm font-bold text-[#e0e0e0] uppercase tracking-wider">Calendário</p>
-              <p className="text-[10px] text-[#3a3a3a] uppercase tracking-wider mt-0.5">Agenda e sessões</p>
+              <p className="text-sm font-bold text-white uppercase tracking-wider">Agendamentos</p>
+              <p className="text-[10px] text-[#444] uppercase tracking-wider mt-0.5">Agenda e calendário</p>
             </div>
-            <span className="text-[#252525] text-xl">›</span>
+            <span className="text-[#333] text-xl">›</span>
           </a>
         </div>
 
         <p className="text-[9px] text-[#2a2a2a] tracking-[0.18em] uppercase mb-3">Acesso Rápido</p>
 
         <a href="/clientes" className="bg-[#1d4ed8] border border-[#2563eb] rounded-xl p-4 flex items-center gap-4 hover:bg-[#1e40af] transition">
-          <div className="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center text-white text-lg">
+          <div className="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center text-white">
             <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
           </div>
           <div className="flex-1">
