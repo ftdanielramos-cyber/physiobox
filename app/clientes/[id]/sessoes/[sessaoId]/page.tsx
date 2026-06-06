@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useParams } from 'next/navigation'
+import Voltar from '@/components/Voltar'
 
 type Set = {
   id?: string
@@ -105,14 +106,24 @@ export default function SessaoPage() {
   const btnLado = (ativo: boolean) => `px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-widest transition ${ativo ? 'bg-[#1d4ed8] text-white' : 'bg-[#0d0d0d] text-[#444] border border-[#1e1e1e]'}`
 
   return (
-    <main className="min-h-screen bg-[#0a0a0a]">
+    <main className="min-h-screen bg-[#0a0a0a] pb-24">
       <div className="max-w-2xl mx-auto px-4 py-10">
-        <a href={`/clientes/${id}`} className="text-[#3b82f6] text-xs tracking-[0.15em] uppercase">← Cliente</a>
-        <div className="flex items-end justify-between mt-2 mb-8 border-b border-[#1a1a1a] pb-6">
+        <Voltar />
+        <div className="flex items-center justify-between mb-8 border-b border-[#1a1a1a] pb-6">
           <h1 className="text-4xl font-extrabold text-white uppercase tracking-tight">Sessão</h1>
           <button onClick={() => setMostrarForm(!mostrarForm)}
-            className="bg-[#1d4ed8] text-white text-xs font-bold uppercase tracking-widest px-4 py-2.5 rounded-xl hover:bg-[#1e40af] transition">
-            + Adicionar
+            style={{
+              width: '44px', height: '44px', borderRadius: '14px',
+              background: mostrarForm ? '#1a1a1a' : '#1d4ed8',
+              border: mostrarForm ? '1px solid #2a2a2a' : 'none',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              cursor: 'pointer', color: '#fff', transition: 'all 0.15s', flexShrink: 0
+            }}
+            aria-label="Adicionar">
+            <svg width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"
+              style={{ transform: mostrarForm ? 'rotate(45deg)' : 'none', transition: 'transform 0.15s' }}>
+              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
           </button>
         </div>
 

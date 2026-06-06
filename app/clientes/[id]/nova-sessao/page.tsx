@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useParams } from 'next/navigation'
+import Voltar from '@/components/Voltar'
 
 export default function NovaSessaoPage() {
   const { id } = useParams()
@@ -30,10 +31,10 @@ export default function NovaSessaoPage() {
   const inputClass = "w-full bg-[#111] border border-[#1e1e1e] rounded-xl px-4 py-3 text-sm text-white uppercase tracking-wider placeholder:text-[#333] focus:outline-none focus:border-[#3b82f6]"
 
   return (
-    <main className="min-h-screen bg-[#0a0a0a]">
+    <main className="min-h-screen bg-[#0a0a0a] pb-24">
       <div className="max-w-2xl mx-auto px-4 py-10">
-        <a href={`/clientes/${id}`} className="text-[#3b82f6] text-xs tracking-[0.15em] uppercase">← Cliente</a>
-        <h1 className="text-4xl font-extrabold text-white uppercase tracking-tight mt-2 mb-8">Nova Sessão</h1>
+        <Voltar />
+        <h1 className="text-4xl font-extrabold text-white uppercase tracking-tight mb-8">Nova Sessão</h1>
 
         <form onSubmit={criarSessao} className="bg-[#111] border border-[#1a1a1a] rounded-xl p-6 flex flex-col gap-4">
           <div>

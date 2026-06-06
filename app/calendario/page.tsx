@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase'
+import Voltar from '@/components/Voltar'
 
 type Agendamento = {
   id: string
@@ -99,7 +100,7 @@ export default function CalendarioPage() {
 
   const s = {
     page: { minHeight: '100vh', background: '#0a0a0a', padding: '40px 16px 100px' } as React.CSSProperties,
-    title: { fontSize: '32px', fontWeight: 800, color: '#fff', textTransform: 'uppercase' as const, letterSpacing: '-0.01em', marginBottom: '24px', marginTop: '8px' },
+    title: { fontSize: '32px', fontWeight: 800, color: '#fff', textTransform: 'uppercase' as const, letterSpacing: '-0.01em', marginBottom: '24px', marginTop: '0' },
     card: { background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '16px', marginBottom: '12px' },
     navRow: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' },
     navBtn: { background: 'none', border: 'none', color: '#555', fontSize: '20px', cursor: 'pointer', padding: '0 4px' },
@@ -115,7 +116,7 @@ export default function CalendarioPage() {
     <main style={s.page}>
       <div style={{ maxWidth: '600px', margin: '0 auto' }}>
 
-        <a href="/dashboard" style={{ fontSize: '11px', color: '#3b82f6', textDecoration: 'none', letterSpacing: '0.15em', textTransform: 'uppercase', fontWeight: 700, display: 'block', marginBottom: '8px' }}>← Dashboard</a>
+        <Voltar />
         <h1 style={s.title}>Calendário</h1>
 
         <div style={s.card}>

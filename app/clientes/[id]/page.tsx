@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useParams } from 'next/navigation'
+import Voltar from '@/components/Voltar'
 
 type Cliente = {
   id: string
@@ -87,9 +88,9 @@ export default function ClientePage() {
     <main className="min-h-screen bg-[#0a0a0a] pb-24">
       <div className="max-w-2xl mx-auto px-4 py-10">
 
-        <a href="/clientes" className="text-[#3b82f6] text-xs tracking-[0.15em] uppercase font-bold">← Clientes</a>
+        <Voltar />
 
-        <h1 className="text-4xl font-extrabold text-white uppercase tracking-tight mt-2 mb-6">{cliente.nome}</h1>
+        <h1 className="text-4xl font-extrabold text-white uppercase tracking-tight mb-6">{cliente.nome}</h1>
 
         {/* TABS */}
         <div style={{ display: 'flex', gap: '4px', borderBottom: '1px solid #1a1a1a', marginBottom: '24px' }}>
