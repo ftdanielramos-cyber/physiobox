@@ -16,7 +16,6 @@ export default function NovaSessaoPage() {
     e.preventDefault()
     setLoading(true)
     const { data: { user } } = await supabase.auth.getUser()
-
     const { data: sessao } = await supabase.from('sessoes').insert({
       cliente_id: id,
       fisio_id: user?.id,
@@ -24,63 +23,36 @@ export default function NovaSessaoPage() {
       hora: hora || null,
       notas: notas || null
     }).select().single()
-
-    if (sessao) {
-      window.location.href = `/clientes/${id}/sessoes/${sessao.id}`
-    }
+    if (sessao) window.location.href = `/clientes/${id}/sessoes/${sessao.id}`
     setLoading(false)
   }
 
-  return (
-    <main className="min-h-screen bg-white text-black font-sans uppercase tracking-wider">
-      <div className="max-w-2xl mx-auto px-4 py-8">
-        <a href={`/clientes/${id}`} className="text-sm font-bold text-black hover:opacity-70 transition block mb-4">
-          ← Cliente
-        </a>
-        
-        <h1 className="text-3xl font-black text-black tracking-tighter italic mb-6">
-          Nova sessão
-        </h1>
+  const inputClass = "w-full bg-[#111] border border-[#1e1e1e] rounded-xl px-4 py-3 text-sm text-white uppercase tracking-wider placeholder:text-[#333] focus:outline-none focus:border-[#3b82f6]"
 
-        <form onSubmit={criarSessao} className="bg-white border-2 border-black rounded-2xl p-6 shadow-sm flex flex-col gap-4">
+  return (
+    <main className="min-h-screen bg-[#0a0a0a]">
+      <div className="max-w-2xl mx-auto px-4 py-10">
+        <a href={`/clientes/${id}`} className="text-[#3b82f6] text-xs tracking-[0.15em] uppercase">← Cliente</a>
+        <h1 className="text-4xl font-extrabold text-white uppercase tracking-tight mt-2 mb-8">Nova Sessão</h1>
+
+        <form onSubmit={criarSessao} className="bg-[#111] border border-[#1a1a1a] rounded-xl p-6 flex flex-col gap-4">
           <div>
-            <label className="text-xs font-black text-black mb-1 block">Data</label>
-            <input 
-              type="date" 
-              value={data} 
-              onChange={e => setData(e.target.value)} 
-              required
-              className="w-full bg-white border-2 border-black rounded-xl px-4 py-3 text-sm font-bold text-black focus:outline-none focus:ring-2 focus:ring-black uppercase" 
-            />
+            <p className="text-[9px] text-[#333] tracking-widest uppercase mb-2">Data</p>
+            <input type="date" value={data} onChange={e => setData(e.target.value)} required className={inputClass} />
           </div>
-          
           <div>
-            <label className="text-xs font-black text-black mb-1 block">Hora</label>
-            <input 
-              type="time" 
-              value={hora} 
-              onChange={e => setHora(e.target.value)}
-              className="w-full bg-white border-2 border-black rounded-xl px-4 py-3 text-sm font-bold text-black focus:outline-none focus:ring-2 focus:ring-black uppercase" 
-            />
+            <p className="text-[9px] text-[#333] tracking-widest uppercase mb-2">Hora</p>
+            <input type="time" value={hora} onChange={e => setHora(e.target.value)} className={inputClass} />
           </div>
-          
           <div>
-            <label className="text-xs font-black text-black mb-1 block">Notas gerais</label>
-            <textarea 
-              value={notas} 
-              onChange={e => setNotas(e.target.value)} 
-              rows={3}
-              placeholder="Observações sobre a sessão..."
-              className="w-full bg-white border-2 border-black rounded-xl px-4 py-3 text-sm font-bold text-black placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-black resize-none uppercase" 
-            />
+            <p className="text-[9px] text-[#333] tracking-widest uppercase mb-2">Notas</p>
+            <textarea value={notas} onChange={e => setNotas(e.target.value)} rows={3}
+              placeholder="Observações gerais..."
+              className={`${inputClass} resize-none`} />
           </div>
-          
-          <button 
-            type="submit" 
-            disabled={loading}
-            className="bg-black text-white py-3.5 rounded-xl font-black text-sm uppercase tracking-widest hover:bg-neutral-800 transition disabled:opacity-50 shadow-md mt-2"
-          >
-            {loading ? 'A criar...' : 'Criar sessão'}
+          <button type="submit" disabled={loading}
+            className="bg-[#1d4ed8] text-white text-xs font-bold uppercase tracking-widest py-3 rounded-xl hover:bg-[#1e40af] transition disabled:opacity-50 mt-2">
+            {loading ? 'A criar...' : 'Criar Sessão'}
           </button>
         </form>
       </div>

@@ -32,9 +32,7 @@ export default function ClientePage() {
   const [sessoes, setSessoes] = useState<any[]>([])
   const supabase = createClient()
 
-  useEffect(() => {
-    carregarDados()
-  }, [id])
+  useEffect(() => { carregarDados() }, [id])
 
   async function carregarDados() {
     const { data: c } = await supabase.from('clientes').select('*').eq('id', id).single()
@@ -64,93 +62,90 @@ export default function ClientePage() {
   }
 
   async function apagarSessao(sessaoId: string) {
-    if (!confirm('Tens a certeza que queres apagar esta sessão?')) return
+    if (!confirm('Apagar esta sessão?')) return
     await supabase.from('sessoes').delete().eq('id', sessaoId)
     carregarDados()
   }
 
-  if (!cliente) return <p className="p-8 text-gray-400">A carregar...</p>
+  const inputClass = "w-full bg-[#0d0d0d] border border-[#1e1e1e] rounded-xl px-4 py-3 text-sm text-white uppercase tracking-wider placeholder:text-[#333] focus:outline-none focus:border-[#3b82f6] resize-none"
+
+  if (!cliente) return (
+    <main className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
+      <p className="text-[#333] text-xs tracking-widest uppercase">A carregar...</p>
+    </main>
+  )
 
   return (
-    <main className="min-h-screen bg-gray-50">
-      <div className="max-w-2xl mx-auto px-4 py-8">
-        <a href="/clientes" className="text-sm text-gray-400 hover:text-gray-600">← Clientes</a>
+    <main className="min-h-screen bg-[#0a0a0a]">
+      <div className="max-w-2xl mx-auto px-4 py-10">
 
-        <div className="bg-white rounded-2xl p-6 shadow-sm mt-4 mb-6">
-          <h1 className="text-2xl font-semibold text-gray-800">{cliente.nome}</h1>
-          <div className="mt-3 flex flex-col gap-1">
-            {cliente.email && <p className="text-sm text-gray-500">📧 {cliente.email}</p>}
-            {cliente.telefone && <p className="text-sm text-gray-500">📞 {cliente.telefone}</p>}
-            {cliente.data_nasc && <p className="text-sm text-gray-500">🎂 {new Date(cliente.data_nasc).toLocaleDateString('pt-PT')}</p>}
+        <a href="/clientes" className="text-[#3b82f6] text-xs tracking-[0.15em] uppercase">← Clientes</a>
+
+        <div className="border-b border-[#1a1a1a] pb-6 mt-4 mb-6">
+          <h1 className="text-4xl font-extrabold text-white uppercase tracking-tight">{cliente.nome}</h1>
+          <div className="flex flex-col gap-1 mt-3">
+            {cliente.email && <p className="text-[10px] text-[#333] uppercase tracking-wider">{cliente.email}</p>}
+            {cliente.telefone && <p className="text-[10px] text-[#333] uppercase tracking-wider">{cliente.telefone}</p>}
+            {cliente.data_nasc && <p className="text-[10px] text-[#333] uppercase tracking-wider">{new Date(cliente.data_nasc).toLocaleDateString('pt-PT')}</p>}
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl p-6 shadow-sm mb-6">
+        <div className="bg-[#111] border border-[#1a1a1a] rounded-xl p-5 mb-4">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-800">Avaliação</h2>
+            <p className="text-xs text-[#3b82f6] tracking-[0.15em] uppercase font-bold">Avaliação</p>
             <button onClick={() => setEditandoFicha(!editandoFicha)}
-              className="text-sm text-blue-600 hover:text-blue-700">
+              className="text-[10px] text-[#444] uppercase tracking-widest hover:text-white transition">
               {editandoFicha ? 'Cancelar' : ficha ? 'Editar' : '+ Adicionar'}
             </button>
           </div>
           {editandoFicha ? (
             <form onSubmit={guardarFicha} className="flex flex-col gap-3">
-              <textarea value={historico} onChange={e => setHistorico(e.target.value)}
-                placeholder="Histórico médico" rows={3}
-                className="border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" />
-              <textarea value={patologias} onChange={e => setPatologias(e.target.value)}
-                placeholder="Patologias" rows={2}
-                className="border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" />
-              <textarea value={medicacao} onChange={e => setMedicacao(e.target.value)}
-                placeholder="Medicação" rows={2}
-                className="border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" />
-              <textarea value={observacoes} onChange={e => setObservacoes(e.target.value)}
-                placeholder="Observações livres" rows={3}
-                className="border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" />
-              <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-blue-700 transition w-fit">
+              <textarea value={historico} onChange={e => setHistorico(e.target.value)} placeholder="Histórico Médico" rows={3} className={inputClass} />
+              <textarea value={patologias} onChange={e => setPatologias(e.target.value)} placeholder="Patologias" rows={2} className={inputClass} />
+              <textarea value={medicacao} onChange={e => setMedicacao(e.target.value)} placeholder="Medicação" rows={2} className={inputClass} />
+              <textarea value={observacoes} onChange={e => setObservacoes(e.target.value)} placeholder="Observações" rows={3} className={inputClass} />
+              <button type="submit" className="bg-[#1d4ed8] text-white text-xs font-bold uppercase tracking-widest px-4 py-2.5 rounded-xl hover:bg-[#1e40af] transition w-fit mt-1">
                 Guardar
               </button>
             </form>
           ) : ficha ? (
-            <div className="flex flex-col gap-3">
-              {ficha.historico_medico && <div><p className="text-xs text-gray-400 mb-1">Histórico médico</p><p className="text-sm text-gray-700">{ficha.historico_medico}</p></div>}
-              {ficha.patologias && <div><p className="text-xs text-gray-400 mb-1">Patologias</p><p className="text-sm text-gray-700">{ficha.patologias}</p></div>}
-              {ficha.medicacao && <div><p className="text-xs text-gray-400 mb-1">Medicação</p><p className="text-sm text-gray-700">{ficha.medicacao}</p></div>}
-              {ficha.observacoes && <div><p className="text-xs text-gray-400 mb-1">Observações</p><p className="text-sm text-gray-700">{ficha.observacoes}</p></div>}
+            <div className="flex flex-col gap-4">
+              {ficha.historico_medico && <div><p className="text-[9px] text-[#333] tracking-widest uppercase mb-1">Histórico Médico</p><p className="text-sm text-[#aaa] uppercase tracking-wide">{ficha.historico_medico}</p></div>}
+              {ficha.patologias && <div><p className="text-[9px] text-[#333] tracking-widest uppercase mb-1">Patologias</p><p className="text-sm text-[#aaa] uppercase tracking-wide">{ficha.patologias}</p></div>}
+              {ficha.medicacao && <div><p className="text-[9px] text-[#333] tracking-widest uppercase mb-1">Medicação</p><p className="text-sm text-[#aaa] uppercase tracking-wide">{ficha.medicacao}</p></div>}
+              {ficha.observacoes && <div><p className="text-[9px] text-[#333] tracking-widest uppercase mb-1">Observações</p><p className="text-sm text-[#aaa] uppercase tracking-wide">{ficha.observacoes}</p></div>}
             </div>
           ) : (
-            <p className="text-sm text-gray-400">Sem avaliação ainda.</p>
+            <p className="text-[10px] text-[#333] uppercase tracking-wider">Sem avaliação ainda.</p>
           )}
         </div>
 
-        <div className="bg-white rounded-2xl p-6 shadow-sm">
+        <div className="bg-[#111] border border-[#1a1a1a] rounded-xl p-5">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-800">Sessões</h2>
-            <a href={`/clientes/${id}/nova-sessao`} className="text-sm text-blue-600 hover:text-blue-700">
-              + Nova sessão
+            <p className="text-xs text-[#3b82f6] tracking-[0.15em] uppercase font-bold">Sessões</p>
+            <a href={`/clientes/${id}/nova-sessao`} className="text-[10px] text-[#444] uppercase tracking-widest hover:text-white transition">
+              + Nova
             </a>
           </div>
           {sessoes.length === 0 ? (
-            <p className="text-sm text-gray-400">Sem sessões ainda.</p>
+            <p className="text-[10px] text-[#333] uppercase tracking-wider">Sem sessões ainda.</p>
           ) : (
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-1">
               {sessoes.map(s => (
-                <div key={s.id} className="flex items-center justify-between py-3 border-b border-gray-50 last:border-0">
-                  <a href={`/clientes/${id}/sessoes/${s.id}`} className="flex-1">
-                    <p className="text-sm font-medium text-gray-800">
+                <div key={s.id} className="flex items-center border-b border-[#161616] last:border-0">
+                  <a href={`/clientes/${id}/sessoes/${s.id}`} className="flex-1 py-3">
+                    <p className="text-xs font-bold text-white uppercase tracking-wider">
                       {new Date(s.data + 'T00:00:00').toLocaleDateString('pt-PT', { weekday: 'long', day: 'numeric', month: 'long' })}
                     </p>
-                    {s.hora && <p className="text-xs text-gray-400">{s.hora.slice(0, 5)}</p>}
+                    {s.hora && <p className="text-[10px] text-[#333] uppercase tracking-wider mt-0.5">{s.hora.slice(0, 5)}</p>}
                   </a>
-                  <button onClick={() => apagarSessao(s.id)}
-                    className="text-gray-300 hover:text-red-400 transition ml-4 text-xl leading-none">
-                    ×
-                  </button>
+                  <button onClick={() => apagarSessao(s.id)} className="text-[#2a2a2a] hover:text-red-500 transition text-xl px-2">×</button>
                 </div>
               ))}
             </div>
           )}
         </div>
+
       </div>
     </main>
   )

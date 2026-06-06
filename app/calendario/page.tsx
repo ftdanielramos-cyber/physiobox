@@ -32,13 +32,8 @@ export default function CalendarioPage() {
   const [loading, setLoading] = useState(false)
   const supabase = createClient()
 
-  useEffect(() => {
-    carregarAgendamentos()
-  }, [mesAtual])
-
-  useEffect(() => {
-    carregarClientes()
-  }, [])
+  useEffect(() => { carregarAgendamentos() }, [mesAtual])
+  useEffect(() => { carregarClientes() }, [])
 
   async function carregarClientes() {
     const { data } = await supabase.from('clientes').select('id, nome').order('nome')
@@ -48,12 +43,7 @@ export default function CalendarioPage() {
   async function carregarAgendamentos() {
     const inicio = new Date(mesAtual.getFullYear(), mesAtual.getMonth(), 1).toISOString().split('T')[0]
     const fim = new Date(mesAtual.getFullYear(), mesAtual.getMonth() + 1, 0).toISOString().split('T')[0]
-    const { data } = await supabase
-      .from('agendamentos')
-      .select('*, clientes(nome)')
-      .gte('data', inicio)
-      .lte('data', fim)
-      .order('hora_inicio')
+    const { data } = await supabase.from('agendamentos').select('*, clientes(nome)').gte('data', inicio).lte('data', fim).order('hora_inicio')
     setAgendamentos((data as any) || [])
   }
 
@@ -97,58 +87,51 @@ export default function CalendarioPage() {
     return d === 0 ? 6 : d - 1
   }
 
-  const meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
-    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
+  const meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
   const diasSemana = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom']
-
   const agendamentosDiaSelected = diaSelected ? agendamentosNoDia(diaSelected) : []
-  const dataSelectedStr = diaSelected
-    ? new Date(mesAtual.getFullYear(), mesAtual.getMonth(), diaSelected)
-        .toLocaleDateString('pt-PT', { weekday: 'long', day: 'numeric', month: 'long' })
-    : ''
+  const dataSelectedStr = diaSelected ? new Date(mesAtual.getFullYear(), mesAtual.getMonth(), diaSelected).toLocaleDateString('pt-PT', { weekday: 'long', day: 'numeric', month: 'long' }) : ''
+
+  const inputClass = "w-full bg-[#0d0d0d] border border-[#1e1e1e] rounded-xl px-4 py-3 text-sm text-white uppercase tracking-wider placeholder:text-[#333] focus:outline-none focus:border-[#3b82f6]"
 
   return (
-    <main className="min-h-screen bg-gray-50">
-      <div className="max-w-2xl mx-auto px-4 py-8">
-        <a href="/dashboard" className="text-sm text-gray-400 hover:text-gray-600">← Dashboard</a>
-        <h1 className="text-2xl font-semibold text-gray-800 mt-1 mb-6">Calendário</h1>
+    <main className="min-h-screen bg-[#0a0a0a]">
+      <div className="max-w-2xl mx-auto px-4 py-10">
+        <a href="/dashboard" className="text-[#3b82f6] text-xs tracking-[0.15em] uppercase">← Dashboard</a>
+        <h1 className="text-4xl font-extrabold text-white uppercase tracking-tight mt-2 mb-8">Calendário</h1>
 
-        <div className="bg-white rounded-2xl shadow-sm p-6 mb-6">
-          <div className="flex items-center justify-between mb-4">
+        <div className="bg-[#111] border border-[#1a1a1a] rounded-xl p-5 mb-4">
+          <div className="flex items-center justify-between mb-5">
             <button onClick={() => setMesAtual(new Date(mesAtual.getFullYear(), mesAtual.getMonth() - 1))}
-              className="text-gray-400 hover:text-gray-600 text-xl px-2">‹</button>
-            <h2 className="font-medium text-gray-800">
+              className="text-[#333] hover:text-white transition text-2xl px-2">‹</button>
+            <p className="text-sm font-bold text-white uppercase tracking-[0.15em]">
               {meses[mesAtual.getMonth()]} {mesAtual.getFullYear()}
-            </h2>
+            </p>
             <button onClick={() => setMesAtual(new Date(mesAtual.getFullYear(), mesAtual.getMonth() + 1))}
-              className="text-gray-400 hover:text-gray-600 text-xl px-2">›</button>
+              className="text-[#333] hover:text-white transition text-2xl px-2">›</button>
           </div>
 
           <div className="grid grid-cols-7 gap-1 mb-2">
             {diasSemana.map(d => (
-              <div key={d} className="text-center text-xs text-gray-400 font-medium py-1">{d}</div>
+              <div key={d} className="text-center text-[9px] text-[#333] tracking-widest uppercase py-1">{d}</div>
             ))}
           </div>
 
           <div className="grid grid-cols-7 gap-1">
-            {Array.from({ length: primeiroDiaSemana() }).map((_, i) => (
-              <div key={`vazio-${i}`} />
-            ))}
+            {Array.from({ length: primeiroDiaSemana() }).map((_, i) => <div key={`v-${i}`} />)}
             {Array.from({ length: diasNoMes() }).map((_, i) => {
               const dia = i + 1
-              const temAgendamentos = agendamentosNoDia(dia).length > 0
+              const temAg = agendamentosNoDia(dia).length > 0
               const hoje = new Date()
               const isHoje = hoje.getDate() === dia && hoje.getMonth() === mesAtual.getMonth() && hoje.getFullYear() === mesAtual.getFullYear()
               const isSelected = diaSelected === dia
 
               return (
                 <button key={dia} onClick={() => { setDiaSelected(dia); setMostrarForm(false) }}
-                  className={`aspect-square flex flex-col items-center justify-center rounded-xl text-sm transition
-                    ${isSelected ? 'bg-blue-600 text-white' : isHoje ? 'bg-blue-50 text-blue-600 font-medium' : 'hover:bg-gray-50 text-gray-700'}`}>
+                  className={`aspect-square flex flex-col items-center justify-center rounded-xl text-xs font-bold uppercase tracking-wider transition
+                    ${isSelected ? 'bg-[#1d4ed8] text-white' : isHoje ? 'bg-[#1a1a1a] text-[#3b82f6]' : 'text-[#444] hover:text-white hover:bg-[#161616]'}`}>
                   <span>{dia}</span>
-                  {temAgendamentos && (
-                    <div className={`w-1.5 h-1.5 rounded-full mt-0.5 ${isSelected ? 'bg-white' : 'bg-blue-500'}`} />
-                  )}
+                  {temAg && <div className={`w-1 h-1 rounded-full mt-0.5 ${isSelected ? 'bg-white' : 'bg-[#3b82f6]'}`} />}
                 </button>
               )
             })}
@@ -156,47 +139,40 @@ export default function CalendarioPage() {
         </div>
 
         {diaSelected && (
-          <div className="bg-white rounded-2xl shadow-sm p-6 mb-6">
+          <div className="bg-[#111] border border-[#1a1a1a] rounded-xl p-5">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="font-medium text-gray-800 capitalize">{dataSelectedStr}</h2>
+              <p className="text-xs text-[#3b82f6] tracking-[0.15em] uppercase font-bold capitalize">{dataSelectedStr}</p>
               <button onClick={() => setMostrarForm(!mostrarForm)}
-                className="bg-blue-600 text-white px-3 py-1.5 rounded-xl text-sm font-medium hover:bg-blue-700 transition">
+                className="bg-[#1d4ed8] text-white text-[10px] font-bold uppercase tracking-widest px-3 py-2 rounded-xl hover:bg-[#1e40af] transition">
                 + Agendar
               </button>
             </div>
 
             {mostrarForm && (
-              <form onSubmit={criarAgendamento} className="flex flex-col gap-3 mb-4 pb-4 border-b border-gray-100">
-                <select value={clienteId} onChange={e => setClienteId(e.target.value)}
-                  className="border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                  <option value="">Sem cliente associado</option>
+              <form onSubmit={criarAgendamento} className="flex flex-col gap-3 mb-4 pb-4 border-b border-[#1a1a1a]">
+                <select value={clienteId} onChange={e => setClienteId(e.target.value)} className={inputClass}>
+                  <option value="">Sem Cliente Associado</option>
                   {clientes.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
                 </select>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-xs text-gray-400 mb-1 block">Hora início</label>
-                    <input type="time" value={horaInicio} onChange={e => setHoraInicio(e.target.value)}
-                      className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    <p className="text-[9px] text-[#333] tracking-widest uppercase mb-2">Hora Início</p>
+                    <input type="time" value={horaInicio} onChange={e => setHoraInicio(e.target.value)} className={inputClass} />
                   </div>
                   <div>
-                    <label className="text-xs text-gray-400 mb-1 block">Hora fim</label>
-                    <input type="time" value={horaFim} onChange={e => setHoraFim(e.target.value)}
-                      className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    <p className="text-[9px] text-[#333] tracking-widest uppercase mb-2">Hora Fim</p>
+                    <input type="time" value={horaFim} onChange={e => setHoraFim(e.target.value)} className={inputClass} />
                   </div>
                 </div>
-                <input value={tipo} onChange={e => setTipo(e.target.value)}
-                  placeholder="Tipo de sessão (ex: Reabilitação, Avaliação...)"
-                  className="border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                <textarea value={notas} onChange={e => setNotas(e.target.value)}
-                  placeholder="Notas (opcional)" rows={2}
-                  className="border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" />
+                <input value={tipo} onChange={e => setTipo(e.target.value)} placeholder="Tipo de Sessão" className={inputClass} />
+                <textarea value={notas} onChange={e => setNotas(e.target.value)} placeholder="Notas" rows={2} className={`${inputClass} resize-none`} />
                 <div className="flex gap-2">
                   <button type="submit" disabled={loading}
-                    className="bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-blue-700 transition disabled:opacity-50">
+                    className="bg-[#1d4ed8] text-white text-xs font-bold uppercase tracking-widest px-4 py-2.5 rounded-xl hover:bg-[#1e40af] transition disabled:opacity-50">
                     Guardar
                   </button>
                   <button type="button" onClick={() => setMostrarForm(false)}
-                    className="text-gray-500 px-4 py-2 rounded-xl text-sm hover:bg-gray-100 transition">
+                    className="text-[#444] text-xs font-bold uppercase tracking-widest px-4 py-2.5 rounded-xl hover:text-white transition">
                     Cancelar
                   </button>
                 </div>
@@ -204,30 +180,25 @@ export default function CalendarioPage() {
             )}
 
             {agendamentosDiaSelected.length === 0 ? (
-              <p className="text-sm text-gray-400">Sem agendamentos para este dia.</p>
+              <p className="text-[10px] text-[#333] uppercase tracking-wider">Sem agendamentos.</p>
             ) : (
               <div className="flex flex-col gap-3">
                 {agendamentosDiaSelected.map(a => (
                   <div key={a.id} className="flex items-start justify-between">
                     <div className="flex gap-3">
-                      <div className="w-1 bg-blue-500 rounded-full self-stretch" />
+                      <div className="w-0.5 bg-[#3b82f6] rounded-full self-stretch" />
                       <div>
-                        <p className="text-sm font-medium text-gray-800">
-                          {a.clientes?.nome || 'Sem cliente'}
-                        </p>
+                        <p className="text-xs font-bold text-white uppercase tracking-wider">{a.clientes?.nome || 'Sem Cliente'}</p>
                         {(a.hora_inicio || a.hora_fim) && (
-                          <p className="text-xs text-gray-400">
+                          <p className="text-[10px] text-[#444] uppercase tracking-wider mt-1">
                             {a.hora_inicio?.slice(0, 5)}{a.hora_fim ? ` → ${a.hora_fim.slice(0, 5)}` : ''}
                           </p>
                         )}
-                        {a.tipo && <p className="text-xs text-gray-400">{a.tipo}</p>}
-                        {a.notas && <p className="text-xs text-gray-400 italic">{a.notas}</p>}
+                        {a.tipo && <p className="text-[10px] text-[#333] uppercase tracking-wider">{a.tipo}</p>}
+                        {a.notas && <p className="text-[10px] text-[#333] uppercase tracking-wider">{a.notas}</p>}
                       </div>
                     </div>
-                    <button onClick={() => apagarAgendamento(a.id)}
-                      className="text-gray-300 hover:text-red-400 transition text-xl leading-none ml-4">
-                      ×
-                    </button>
+                    <button onClick={() => apagarAgendamento(a.id)} className="text-[#2a2a2a] hover:text-red-500 transition text-xl ml-4">×</button>
                   </div>
                 ))}
               </div>

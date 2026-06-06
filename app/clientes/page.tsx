@@ -21,9 +21,7 @@ export default function ClientesPage() {
   const [dataNasc, setDataNasc] = useState('')
   const supabase = createClient()
 
-  useEffect(() => {
-    carregarClientes()
-  }, [])
+  useEffect(() => { carregarClientes() }, [])
 
   async function carregarClientes() {
     const { data } = await supabase.from('clientes').select('*').order('nome')
@@ -34,10 +32,7 @@ export default function ClientesPage() {
   async function adicionarCliente(e: React.FormEvent) {
     e.preventDefault()
     const { data: { user } } = await supabase.auth.getUser()
-    await supabase.from('clientes').insert({
-      nome, email, telefone, data_nasc: dataNasc || null,
-      created_by: user?.id
-    })
+    await supabase.from('clientes').insert({ nome, email, telefone, data_nasc: dataNasc || null, created_by: user?.id })
     setNome(''); setEmail(''); setTelefone(''); setDataNasc('')
     setMostrarForm(false)
     carregarClientes()
@@ -49,55 +44,56 @@ export default function ClientesPage() {
     carregarClientes()
   }
 
+  const inputClass = "w-full bg-[#111] border border-[#1e1e1e] rounded-xl px-4 py-3 text-sm text-white uppercase tracking-wider placeholder:text-[#333] focus:outline-none focus:border-[#3b82f6]"
+
   return (
-    <main className="min-h-screen bg-gray-50">
-      <div className="max-w-2xl mx-auto px-4 py-8">
-        <div className="flex items-center justify-between mb-6">
+    <main className="min-h-screen bg-[#0a0a0a]">
+      <div className="max-w-2xl mx-auto px-4 py-10">
+
+        <div className="flex items-end justify-between mb-8 border-b border-[#1a1a1a] pb-6">
           <div>
-            <a href="/dashboard" className="text-sm text-gray-400 hover:text-gray-600">← Dashboard</a>
-            <h1 className="text-2xl font-semibold text-gray-800 mt-1">Clientes</h1>
+            <a href="/dashboard" className="text-[#3b82f6] text-xs tracking-[0.15em] uppercase">← Dashboard</a>
+            <h1 className="text-4xl font-extrabold text-white uppercase tracking-tight mt-2">Clientes</h1>
           </div>
-          <button
-            onClick={() => setMostrarForm(!mostrarForm)}
-            className="bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-blue-700 transition">
-            + Novo cliente
+          <button onClick={() => setMostrarForm(!mostrarForm)}
+            className="bg-[#1d4ed8] text-white text-xs font-bold uppercase tracking-widest px-4 py-2.5 rounded-xl hover:bg-[#1e40af] transition">
+            + Novo
           </button>
         </div>
+
         {mostrarForm && (
-          <form onSubmit={adicionarCliente} className="bg-white rounded-2xl p-6 shadow-sm mb-6 flex flex-col gap-4">
-            <h2 className="font-medium text-gray-800">Novo cliente</h2>
-            <input value={nome} onChange={e => setNome(e.target.value)} placeholder="Nome completo" required
-              className="border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-            <input value={email} onChange={e => setEmail(e.target.value)} placeholder="Email" type="email"
-              className="border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-            <input value={telefone} onChange={e => setTelefone(e.target.value)} placeholder="Telefone"
-              className="border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-            <input value={dataNasc} onChange={e => setDataNasc(e.target.value)} type="date"
-              className="border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-            <div className="flex gap-2">
-              <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-blue-700 transition">
-                Guardar
-              </button>
-              <button type="button" onClick={() => setMostrarForm(false)} className="text-gray-500 px-4 py-2 rounded-xl text-sm hover:bg-gray-100 transition">
-                Cancelar
-              </button>
-            </div>
-          </form>
+          <div className="bg-[#111] border border-[#1e1e1e] rounded-xl p-6 mb-6">
+            <p className="text-xs text-[#3b82f6] tracking-[0.15em] uppercase mb-4">Novo Cliente</p>
+            <form onSubmit={adicionarCliente} className="flex flex-col gap-3">
+              <input value={nome} onChange={e => setNome(e.target.value)} placeholder="Nome Completo" required className={inputClass} />
+              <input value={email} onChange={e => setEmail(e.target.value)} placeholder="Email" type="email" className={inputClass} />
+              <input value={telefone} onChange={e => setTelefone(e.target.value)} placeholder="Telefone" className={inputClass} />
+              <input value={dataNasc} onChange={e => setDataNasc(e.target.value)} type="date" className={inputClass} />
+              <div className="flex gap-2 mt-2">
+                <button type="submit" className="bg-[#1d4ed8] text-white text-xs font-bold uppercase tracking-widest px-4 py-2.5 rounded-xl hover:bg-[#1e40af] transition">
+                  Guardar
+                </button>
+                <button type="button" onClick={() => setMostrarForm(false)} className="text-[#444] text-xs font-bold uppercase tracking-widest px-4 py-2.5 rounded-xl hover:text-white transition">
+                  Cancelar
+                </button>
+              </div>
+            </form>
+          </div>
         )}
+
         {loading ? (
-          <p className="text-gray-400 text-sm">A carregar...</p>
+          <p className="text-[#333] text-xs tracking-widest uppercase">A carregar...</p>
         ) : clientes.length === 0 ? (
-          <p className="text-gray-400 text-sm">Ainda não tens clientes.</p>
+          <p className="text-[#333] text-xs tracking-widest uppercase">Sem clientes ainda.</p>
         ) : (
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-2">
             {clientes.map(c => (
-              <div key={c.id} className="bg-white rounded-2xl px-6 py-4 shadow-sm hover:shadow-md transition flex items-center justify-between">
-                <a href={`/clientes/${c.id}`} className="flex-1">
-                  <p className="font-medium text-gray-800">{c.nome}</p>
-                  <p className="text-sm text-gray-400">{c.telefone || c.email || '—'}</p>
+              <div key={c.id} className="bg-[#111] border border-[#1a1a1a] rounded-xl flex items-center hover:border-[#2a2a2a] transition">
+                <a href={`/clientes/${c.id}`} className="flex-1 px-5 py-4">
+                  <p className="text-sm font-bold text-white uppercase tracking-wider">{c.nome}</p>
+                  <p className="text-[10px] text-[#333] uppercase tracking-wider mt-1">{c.telefone || c.email || '—'}</p>
                 </a>
-                <button onClick={() => apagarCliente(c.id)}
-                  className="text-gray-300 hover:text-red-400 transition ml-4 text-xl leading-none">
+                <button onClick={() => apagarCliente(c.id)} className="px-4 text-[#2a2a2a] hover:text-red-500 transition text-xl">
                   ×
                 </button>
               </div>
