@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase'
 
 type Agendamento = {
   id: string
-  string
+  string // Corrigido aqui
   hora_inicio: string
   hora_fim: string
   tipo: string
@@ -50,16 +50,17 @@ export default function CalendarioPage() {
   async function criarAgendamento(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
-    const { { user } } = await supabase.auth.getUser()
-    const dataStr = `${mesAtual.getFullYear()}-${String(mesAtual.getMonth() + 1).padStart(2, '0')}-${String(diaSelected).padStart(2, '0')}`
+    const { data } = await supabase.auth.getUser(); // Correção aqui
+    const user = data.user; // Acesse o usuário
+    const dataStr = `${mesAtual.getFullYear()}-${String(mesAtual.getMonth() + 1).padStart(2, '0')}-${String(diaSelected).padStart(2, '0')}`;
     await supabase.from('agendamentos').insert({
-      cliente_id: clienteId || null,
-      fisio_id: user?.id,
-      dataStr,
-      hora_inicio: horaInicio || null,
-      hora_fim: horaFim || null,
-      tipo: tipo || null,
-      notas: notas || null,
+        cliente_id: clienteId || null,
+        fisio_id: user?.id,
+        dataStr, // Certifique-se de que a chave está correta
+        hora_inicio: horaInicio || null,
+        hora_fim: horaFim || null,
+        tipo: tipo || null,
+        notas: notas || null,
     })
     setClienteId(''); setHoraInicio(''); setHoraFim(''); setTipo(''); setNotas('')
     setMostrarForm(false)
