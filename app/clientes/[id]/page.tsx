@@ -39,7 +39,6 @@ export default function ClientePage() {
   async function carregarDados() {
     const { data: c } = await supabase.from('clientes').select('*').eq('id', id).single()
     setCliente(c)
-
     const { data: f } = await supabase.from('fichas').select('*').eq('cliente_id', id).single()
     if (f) {
       setFicha(f)
@@ -48,7 +47,6 @@ export default function ClientePage() {
       setMedicacao(f.medicacao || '')
       setObservacoes(f.observacoes || '')
     }
-
     const { data: s } = await supabase.from('sessoes').select('*').eq('cliente_id', id).order('data', { ascending: false })
     setSessoes(s || [])
   }
@@ -62,6 +60,12 @@ export default function ClientePage() {
       await supabase.from('fichas').insert({ ...dados, cliente_id: id })
     }
     setEditandoFicha(false)
+    carregarDados()
+  }
+
+  async function apagarSessao(sessaoId: string) {
+    if (!confirm('Tens a certeza que queres apagar esta sessão?')) return
+    await supabase.from('sessoes').delete().eq('id', sessaoId)
     carregarDados()
   }
 
@@ -89,7 +93,6 @@ export default function ClientePage() {
               {editandoFicha ? 'Cancelar' : ficha ? 'Editar' : '+ Adicionar'}
             </button>
           </div>
-
           {editandoFicha ? (
             <form onSubmit={guardarFicha} className="flex flex-col gap-3">
               <textarea value={historico} onChange={e => setHistorico(e.target.value)}
@@ -132,16 +135,18 @@ export default function ClientePage() {
           ) : (
             <div className="flex flex-col gap-2">
               {sessoes.map(s => (
-                <a key={s.id} href={`/clientes/${id}/sessoes/${s.id}`}
-                  className="flex items-center justify-between py-3 border-b border-gray-50 last:border-0">
-                  <div>
+                <div key={s.id} className="flex items-center justify-between py-3 border-b border-gray-50 last:border-0">
+                  <a href={`/clientes/${id}/sessoes/${s.id}`} className="flex-1">
                     <p className="text-sm font-medium text-gray-800">
                       {new Date(s.data + 'T00:00:00').toLocaleDateString('pt-PT', { weekday: 'long', day: 'numeric', month: 'long' })}
                     </p>
                     {s.hora && <p className="text-xs text-gray-400">{s.hora.slice(0, 5)}</p>}
-                  </div>
-                  <span className="text-gray-300">→</span>
-                </a>
+                  </a>
+                  <button onClick={() => apagarSessao(s.id)}
+                    className="text-gray-300 hover:text-red-400 transition ml-4 text-xl leading-none">
+                    ×
+                  </button>
+                </div>
               ))}
             </div>
           )}
