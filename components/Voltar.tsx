@@ -20,7 +20,7 @@ export default function Voltar() {
         </svg>
       </button>
 
-      {/* Atalho Dashboard */}
+      {/* Atalho Menu Inicial */}
       <button onClick={() => router.push('/dashboard')}
         style={{
           height: '40px', borderRadius: '12px', paddingLeft: '14px', paddingRight: '14px',
@@ -28,13 +28,13 @@ export default function Voltar() {
           display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
           cursor: 'pointer', color: '#555',
         }}
-        aria-label="Menu Principal">
+        aria-label="Menu Inicial">
         <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-          <polyline points="9 22 9 12 15 12 15 22"/>
+          <line x1="19" y1="12" x2="5" y2="12"/>
+          <polyline points="12 19 5 12 12 5"/>
         </svg>
         <span style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-          Dashboard
+          Menu Inicial
         </span>
       </button>
     </div>
