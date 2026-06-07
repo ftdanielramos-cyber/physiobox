@@ -43,7 +43,6 @@ export default function Dashboard() {
     window.location.href = '/'
   }
 
-  // Fecha o dropdown ao clicar fora
   useEffect(() => {
     function handler(e: MouseEvent) {
       if (langRef.current && !langRef.current.contains(e.target as Node)) {
@@ -118,8 +117,6 @@ export default function Dashboard() {
 
             {/* Dropdown idioma + Logout */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
-
-              {/* Dropdown */}
               <div ref={langRef} style={{ position: 'relative' }}>
                 <button
                   onClick={() => setLangOpen(o => !o)}
@@ -216,6 +213,19 @@ export default function Dashboard() {
           <a href="/protocolos" style={s.card}>
             <div style={s.iconBox}><svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z" /><path d="M2 17l10 5 10-5" /><path d="M2 12l10 5 10-5" /></svg></div>
             <div style={{ flex: 1 }}><p style={s.cardTitle}>{t.rehabProtocols}</p></div>
+            <span style={s.arrow}>›</span>
+          </a>
+
+          {/* Exercícios — card novo */}
+          <a href="/exercicios" style={s.card}>
+            <div style={s.iconBox}>
+              <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+                <path d="M6.5 6.5h11" /><path d="M6.5 17.5h11" />
+                <path d="M3 10h2.5v4H3z" /><path d="M18.5 10H21v4h-2.5z" />
+                <path d="M5.5 8v8" /><path d="M18.5 8v8" />
+              </svg>
+            </div>
+            <div style={{ flex: 1 }}><p style={s.cardTitle}>Exercícios</p></div>
             <span style={s.arrow}>›</span>
           </a>
         </div>
