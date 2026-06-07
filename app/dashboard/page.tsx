@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useTranslation } from '@/lib/useTranslation'
 import type { Locale } from '@/lib/i18n'
@@ -22,10 +22,10 @@ function useCountUp(target: number | null, duration = 1000) {
   return target === null ? null : value
 }
 
-const LANGS: { code: Locale }[] = [
-  { code: 'pt' },
-  { code: 'en' },
-  { code: 'es' },
+const LANGS: { code: Locale; label: string }[] = [
+  { code: 'pt', label: 'Português' },
+  { code: 'en', label: 'English' },
+  { code: 'es', label: 'Español' },
 ]
 
 export default function Dashboard() {
@@ -34,12 +34,25 @@ export default function Dashboard() {
   const [sessoesHoje, setSessoesHoje] = useState<number | null>(null)
   const [sessoesMes, setSessoesMes] = useState<number | null>(null)
   const [proximos, setProximos] = useState<any[]>([])
+  const [langOpen, setLangOpen] = useState(false)
+  const langRef = useRef<HTMLDivElement>(null)
   const supabase = createClient()
 
   async function logout() {
     await supabase.auth.signOut()
     window.location.href = '/'
   }
+
+  // Fecha o dropdown ao clicar fora
+  useEffect(() => {
+    function handler(e: MouseEvent) {
+      if (langRef.current && !langRef.current.contains(e.target as Node)) {
+        setLangOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
 
   useEffect(() => {
     async function carregarStats() {
@@ -103,25 +116,59 @@ export default function Dashboard() {
               <h1 style={{ fontSize: '30px', fontWeight: 800, color: '#fff', textTransform: 'uppercase', letterSpacing: '-0.01em', lineHeight: 1 }}>{t.hello}</h1>
             </div>
 
-            {/* Idioma + Logout */}
+            {/* Dropdown idioma + Logout */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
-              {LANGS.map(lang => {
-                const ativo = locale === lang.code
-                return (
-                  <button key={lang.code} onClick={() => setLocale(lang.code)}
-                    style={{
-                      padding: '5px 10px', borderRadius: '20px', cursor: 'pointer',
-                      background: ativo ? 'rgba(59,130,246,0.12)' : 'transparent',
-                      border: ativo ? '1px solid rgba(59,130,246,0.3)' : '1px solid #1e1e1e',
-                      fontSize: '9px', fontWeight: 700,
-                      color: ativo ? '#3b82f6' : '#444',
-                      textTransform: 'uppercase', letterSpacing: '0.1em',
-                      transition: 'all 0.15s',
-                    }}>
-                    {lang.code.toUpperCase()}
-                  </button>
-                )
-              })}
+
+              {/* Dropdown */}
+              <div ref={langRef} style={{ position: 'relative' }}>
+                <button
+                  onClick={() => setLangOpen(o => !o)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '5px',
+                    padding: '5px 10px', borderRadius: '20px', cursor: 'pointer',
+                    background: 'transparent', border: '1px solid #1e1e1e',
+                    fontSize: '9px', fontWeight: 700, color: '#444',
+                    textTransform: 'uppercase', letterSpacing: '0.1em',
+                    transition: 'all 0.15s',
+                  }}>
+                  {locale.toUpperCase()}
+                  <svg width="8" height="8" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"
+                    style={{ transition: 'transform 0.15s', transform: langOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}>
+                    <polyline points="6 9 12 15 18 9" />
+                  </svg>
+                </button>
+
+                {langOpen && (
+                  <div style={{
+                    position: 'absolute', top: 'calc(100% + 6px)', right: 0,
+                    background: '#141414', border: '1px solid #222', borderRadius: '10px',
+                    overflow: 'hidden', zIndex: 50, minWidth: '110px',
+                  }}>
+                    {LANGS.map((lang, i) => (
+                      <button
+                        key={lang.code}
+                        onClick={() => { setLocale(lang.code); setLangOpen(false) }}
+                        style={{
+                          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                          width: '100%', padding: '9px 12px',
+                          background: locale === lang.code ? 'rgba(59,130,246,0.08)' : 'transparent',
+                          border: 'none',
+                          borderTop: i > 0 ? '1px solid #1e1e1e' : 'none',
+                          cursor: 'pointer', textAlign: 'left',
+                        }}>
+                        <span style={{ fontSize: '9px', fontWeight: 700, color: locale === lang.code ? '#3b82f6' : '#888', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                          {lang.label}
+                        </span>
+                        {locale === lang.code && (
+                          <svg width="10" height="10" fill="none" stroke="#3b82f6" strokeWidth="2.5" viewBox="0 0 24 24">
+                            <polyline points="20 6 9 17 4 12" />
+                          </svg>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
 
               <div style={{ width: '1px', height: '16px', background: '#222', margin: '0 2px' }} />
 
