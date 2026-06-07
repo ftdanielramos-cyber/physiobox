@@ -37,7 +37,7 @@ export default function Dashboard() {
       const { count: c } = await supabase.from('clientes').select('*', { count: 'exact', head: true })
       setTotalClientes(c || 0)
 
-      const hoje = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Lisbon' }) // "YYYY-MM-DD" em hora portuguesa
+      const hoje = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Lisbon' })
       const { count: sh } = await supabase.from('sessoes').select('*', { count: 'exact', head: true }).eq('data', hoje)
       setSessoesHoje(sh || 0)
 
@@ -48,20 +48,16 @@ export default function Dashboard() {
       setSessoesMes(sm || 0)
 
       const { data: ag } = await supabase.from('agendamentos').select('*, clientes(nome)').gte('data', hoje).order('data').order('hora_inicio').limit(10)
-
-      // Hora atual em Portugal
       const horaAgora = new Date().toLocaleTimeString('pt-PT', { timeZone: 'Europe/Lisbon', hour: '2-digit', minute: '2-digit', hour12: false })
-
-      const filtrados = (ag || []).filter(a => {
-        if (a.data > hoje) return true // dias futuros: sempre mostrar
-        if (!a.hora_inicio) return a.data >= hoje // sem hora: só se for hoje ou futuro
-        return a.hora_inicio.slice(0, 5) > horaAgora // hoje: só se ainda não começou
+      const filtrados = (ag || []).filter((a: any) => {
+        if (a.data > hoje) return true
+        if (!a.hora_inicio) return a.data >= hoje
+        return a.hora_inicio.slice(0, 5) > horaAgora
       }).sort((a: any, b: any) => {
         const da = a.data + (a.hora_inicio || '00:00')
         const db = b.data + (b.hora_inicio || '00:00')
         return da.localeCompare(db)
       }).slice(0, 3)
-
       setProximos(filtrados)
     }
     carregarStats()
@@ -85,29 +81,36 @@ export default function Dashboard() {
   }
 
   const stats = [
-    { valor: animClientes, label: 'Clientes', icon: (
-      <svg width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
-        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
-        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-      </svg>
-    )},
-    { valor: animHoje, label: 'Hoje', icon: (
-      <svg width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
-        <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
-      </svg>
-    )},
-    { valor: animMes, label: 'Este Mês', icon: (
-      <svg width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
-        <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/>
-        <line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
-      </svg>
-    )},
+    {
+      valor: animClientes, label: 'Clientes', icon: (
+        <svg width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" />
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" />
+        </svg>
+      )
+    },
+    {
+      valor: animHoje, label: 'Hoje', icon: (
+        <svg width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
+        </svg>
+      )
+    },
+    {
+      valor: animMes, label: 'Este Mês', icon: (
+        <svg width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+          <rect x="3" y="4" width="18" height="18" rx="2" /><line x1="16" y1="2" x2="16" y2="6" />
+          <line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
+        </svg>
+      )
+    },
   ]
 
   return (
     <main style={s.page}>
       <div style={s.wrap}>
 
+        {/* Header */}
         <div style={{ marginBottom: '28px', borderBottom: '1px solid #1a1a1a', paddingBottom: '24px', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
           <div>
             <p style={{ color: '#3b82f6', fontSize: '10px', letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: '4px' }}>{hoje}</p>
@@ -118,14 +121,15 @@ export default function Dashboard() {
           <button onClick={logout}
             style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', padding: '0', marginTop: '4px' }}>
             <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-              <polyline points="16 17 21 12 16 7"/>
-              <line x1="21" y1="12" x2="9" y2="12"/>
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+              <polyline points="16 17 21 12 16 7" />
+              <line x1="21" y1="12" x2="9" y2="12" />
             </svg>
             Sair
           </button>
         </div>
 
+        {/* Stats */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', marginBottom: '32px' }}>
           {stats.map(st => (
             <div key={st.label} style={{
@@ -146,13 +150,15 @@ export default function Dashboard() {
           ))}
         </div>
 
+        {/* Navegação */}
         <p style={s.sectionLbl}>Navegação</p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '32px' }}>
+
           <a href="/clientes" style={s.card}>
             <div style={s.iconBox}>
               <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
-                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
-                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" />
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" />
               </svg>
             </div>
             <div style={{ flex: 1 }}><p style={s.cardTitle}>Clientes</p></div>
@@ -162,8 +168,8 @@ export default function Dashboard() {
           <a href="/calendario" style={s.card}>
             <div style={s.iconBox}>
               <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
-                <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/>
-                <line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+                <rect x="3" y="4" width="18" height="18" rx="2" /><line x1="16" y1="2" x2="16" y2="6" />
+                <line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
               </svg>
             </div>
             <div style={{ flex: 1 }}><p style={s.cardTitle}>Agendamentos</p></div>
@@ -173,7 +179,7 @@ export default function Dashboard() {
           <a href="/avaliacoes" style={s.card}>
             <div style={s.iconBox}>
               <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
-                <path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                <path d="M9 11l3 3L22 4" /><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
               </svg>
             </div>
             <div style={{ flex: 1 }}>
@@ -182,13 +188,39 @@ export default function Dashboard() {
             </div>
             <span style={s.arrow}>›</span>
           </a>
+
+          {/* ─── NOVO: Protocolos de Reabilitação ─── */}
+          <a href="/protocolos" style={{
+            ...s.card,
+            background: 'linear-gradient(135deg, #0f1a2e 0%, #141414 100%)',
+            border: '1px solid rgba(16,185,129,0.25)',
+            position: 'relative',
+            overflow: 'hidden',
+          }}>
+            {/* glow */}
+            <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at 0% 50%, rgba(16,185,129,0.07) 0%, transparent 70%)', pointerEvents: 'none' }} />
+            <div style={{ ...s.iconBox, color: '#10b981', border: '1px solid rgba(16,185,129,0.3)', background: 'rgba(16,185,129,0.08)' }}>
+              <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+                <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                <path d="M2 17l10 5 10-5" />
+                <path d="M2 12l10 5 10-5" />
+              </svg>
+            </div>
+            <div style={{ flex: 1 }}>
+              <p style={{ ...s.cardTitle, color: '#10b981' }}>Protocolos de Reabilitação</p>
+              <p style={{ ...s.cardSub, color: 'rgba(16,185,129,0.6)' }}>Templates · Atribuição a Pacientes</p>
+            </div>
+            <span style={{ ...s.arrow, color: 'rgba(16,185,129,0.4)' }}>›</span>
+          </a>
+
         </div>
 
+        {/* Próximos Agendamentos */}
         {proximos.length > 0 && (
           <div style={{ marginTop: '32px' }}>
             <p style={s.sectionLbl}>Próximos Agendamentos</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              {proximos.map(a => (
+              {proximos.map((a: any) => (
                 <a key={a.id} href={a.cliente_id ? `/clientes/${a.cliente_id}` : '/calendario'} style={s.card}>
                   <div style={{ width: '4px', height: '40px', background: '#3b82f6', borderRadius: '2px', flexShrink: 0 }} />
                   <div style={{ flex: 1, minWidth: 0 }}>
