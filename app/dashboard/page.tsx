@@ -5,11 +5,6 @@ import { createClient } from '@/lib/supabase'
 
 function useCountUp(target: number | null, duration = 1000) {
   const [value, setValue] = useState(0)
-  async function logout() {
-    await supabase.auth.signOut()
-    window.location.href = '/'
-  }
-
   useEffect(() => {
     if (target === null) return
     if (target === 0) { setValue(0); return }
