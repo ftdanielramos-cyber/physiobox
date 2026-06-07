@@ -17,28 +17,9 @@ function formatarNome(nome: string): { apelido: string; proprio: string } {
   if (!nome) return { apelido: '', proprio: '' }
   const partes = nome.trim().split(' ')
   if (partes.length === 1) return { apelido: partes[0].toUpperCase(), proprio: '' }
-  const proprio = partes[0]
+  const proprio = partes[0].toUpperCase()
   const apelido = partes.slice(1).join(' ').toUpperCase()
   return { apelido, proprio }
-}
-
-function Iniciais({ nome }: { nome: string }) {
-  const partes = nome.trim().split(' ')
-  const ini = partes.length >= 2
-    ? (partes[0][0] + partes[partes.length - 1][0]).toUpperCase()
-    : nome[0].toUpperCase()
-  const cores = ['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444', '#06b6d4', '#ec4899']
-  const cor = cores[nome.charCodeAt(0) % cores.length]
-  return (
-    <div style={{
-      width: '42px', height: '42px', borderRadius: '14px', flexShrink: 0,
-      background: `${cor}18`, border: `1px solid ${cor}30`,
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      fontSize: '13px', fontWeight: 800, color: cor, letterSpacing: '0.05em',
-    }}>
-      {ini}
-    </div>
-  )
 }
 
 export default function ClientesPage() {
@@ -127,12 +108,7 @@ export default function ClientesPage() {
           </svg>
           <input value={pesquisa} onChange={e => setPesquisa(e.target.value)}
             placeholder={t.searchClients}
-            style={{
-              width: '100%', background: '#111', border: '1px solid #1e1e1e',
-              borderRadius: '40px', padding: '13px 20px 13px 46px',
-              fontSize: '13px', color: '#fff', outline: 'none', letterSpacing: '0.05em',
-              boxSizing: 'border-box', transition: 'border-color 0.2s',
-            }}
+            style={{ width: '100%', background: '#111', border: '1px solid #1e1e1e', borderRadius: '40px', padding: '13px 20px 13px 46px', fontSize: '13px', color: '#fff', outline: 'none', letterSpacing: '0.05em', boxSizing: 'border-box' as const, transition: 'border-color 0.2s' }}
             onFocus={e => (e.currentTarget.style.borderColor = '#3b82f6')}
             onBlur={e => (e.currentTarget.style.borderColor = '#1e1e1e')}
           />
@@ -155,47 +131,42 @@ export default function ClientesPage() {
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {clientesFiltrados.map((c, i) => {
+            {clientesFiltrados.map(c => {
               const { apelido, proprio } = formatarNome(c.nome)
               return (
-                <div key={c.id} style={{
-                  display: 'flex', alignItems: 'center',
-                  background: '#111',
-                  border: '1px solid #1a1a1a',
-                  borderRadius: '20px',
-                  overflow: 'hidden',
-                  transition: 'border-color 0.15s, transform 0.15s',
-                }}
+                <div key={c.id}
+                  style={{ display: 'flex', alignItems: 'center', background: '#111', border: '1px solid #1a1a1a', borderRadius: '20px', overflow: 'hidden', transition: 'border-color 0.15s, transform 0.15s' }}
                   onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.borderColor = '#2a2a2a'; (e.currentTarget as HTMLDivElement).style.transform = 'translateY(-1px)' }}
                   onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.borderColor = '#1a1a1a'; (e.currentTarget as HTMLDivElement).style.transform = 'translateY(0)' }}
                 >
                   <a href={`/clientes/${c.id}`} style={{ display: 'flex', alignItems: 'center', gap: '14px', flex: 1, minWidth: 0, padding: '14px 16px', textDecoration: 'none' }}>
-                    {/* Iniciais coloridas */}
-                    <Iniciais nome={c.nome} />
 
-                    {/* Nome formatado */}
+                    {/* Avatar — ícone de pessoa moderno */}
+                    <div style={{ width: '40px', height: '40px', borderRadius: '12px', flexShrink: 0, background: '#1a1a1a', border: '1px solid #222', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <svg width="20" height="20" fill="none" stroke="#3b3b3b" strokeWidth="1.5" viewBox="0 0 24 24">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                        <circle cx="12" cy="7" r="4"/>
+                      </svg>
+                    </div>
+
+                    {/* Nome: APELIDO, NOME */}
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', flexWrap: 'wrap' }}>
-                        <span style={{ fontSize: '14px', fontWeight: 900, color: '#fff', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                      <div style={{ display: 'flex', alignItems: 'baseline', gap: '5px', overflow: 'hidden' }}>
+                        <span style={{ fontSize: '14px', fontWeight: 900, color: '#fff', letterSpacing: '0.08em', whiteSpace: 'nowrap' }}>
                           {apelido}
                         </span>
                         {proprio && (
                           <>
-                            <span style={{ fontSize: '12px', color: '#444', fontWeight: 400 }}>,</span>
-                            <span style={{ fontSize: '12px', fontWeight: 500, color: '#888', letterSpacing: '0.03em' }}>
+                            <span style={{ fontSize: '13px', color: '#333', fontWeight: 700 }}>,</span>
+                            <span style={{ fontSize: '11px', fontWeight: 600, color: '#555', letterSpacing: '0.06em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                               {proprio}
                             </span>
                           </>
                         )}
                       </div>
-                      {c.email && (
-                        <p style={{ fontSize: '10px', color: '#333', marginTop: '2px', letterSpacing: '0.03em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {c.email}
-                        </p>
-                      )}
                     </div>
 
-                    <svg width="16" height="16" fill="none" stroke="#2a2a2a" strokeWidth="2" viewBox="0 0 24 24" style={{ flexShrink: 0 }}>
+                    <svg width="14" height="14" fill="none" stroke="#2a2a2a" strokeWidth="2" viewBox="0 0 24 24" style={{ flexShrink: 0 }}>
                       <polyline points="9 18 15 12 9 6"/>
                     </svg>
                   </a>
@@ -203,7 +174,7 @@ export default function ClientesPage() {
                   {/* Acções */}
                   <div style={{ display: 'flex', borderLeft: '1px solid #1a1a1a' }}>
                     <button onClick={() => iniciarEdicao(c)}
-                      style={{ width: '44px', height: '100%', minHeight: '68px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', cursor: 'pointer', color: '#333', transition: 'color 0.15s' }}
+                      style={{ width: '44px', minHeight: '68px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', cursor: 'pointer', color: '#333', transition: 'color 0.15s' }}
                       onMouseEnter={e => (e.currentTarget.style.color = '#6366f1')}
                       onMouseLeave={e => (e.currentTarget.style.color = '#333')}>
                       <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -212,7 +183,7 @@ export default function ClientesPage() {
                       </svg>
                     </button>
                     <button onClick={() => apagarCliente(c.id)}
-                      style={{ width: '44px', height: '100%', minHeight: '68px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', cursor: 'pointer', color: '#333', transition: 'color 0.15s', borderLeft: '1px solid #1a1a1a' }}
+                      style={{ width: '44px', minHeight: '68px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', cursor: 'pointer', color: '#333', transition: 'color 0.15s', borderLeft: '1px solid #1a1a1a' }}
                       onMouseEnter={e => (e.currentTarget.style.color = '#ef4444')}
                       onMouseLeave={e => (e.currentTarget.style.color = '#333')}>
                       <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
