@@ -180,16 +180,7 @@ export default function Home() {
         }
 
         /* Ampulheta animada */
-        .hourglass {
-          display: inline-block;
-          animation: flipHourglass 1.4s ease-in-out infinite;
-        }
 
-        @keyframes flipHourglass {
-          0%, 45%   { transform: rotate(0deg); }
-          50%, 95%  { transform: rotate(180deg); }
-          100%      { transform: rotate(180deg); }
-        }
 
         .version {
           position: absolute;
@@ -254,9 +245,7 @@ export default function Home() {
               className="btn"
               onClick={() => setLoadingLogin(true)}
             >
-              {loadingLogin
-                ? <span className="hourglass">⏳</span>
-                : 'Entrar'}
+              {loadingLogin ? <span className="spinner" /> : 'Entrar'}
             </Link>
 
             <button onClick={entrarDemo} disabled={loadingDemo} className="btn btn-demo">

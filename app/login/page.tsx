@@ -242,15 +242,18 @@ export default function LoginPage() {
         .btn-login:hover { background: #2563eb; box-shadow: 0 4px 24px rgba(59,130,246,0.4); transform: translateY(-1px); }
         .btn-login:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
-        .hourglass {
-          display: inline-block;
-          animation: flipHourglass 1.4s ease-in-out infinite;
+        .spinner {
+          width: 16px;
+          height: 16px;
+          border: 2px solid rgba(255,255,255,0.15);
+          border-top-color: #fff;
+          border-radius: 50%;
+          animation: spin 0.7s linear infinite;
+          flex-shrink: 0;
         }
 
-        @keyframes flipHourglass {
-          0%, 45%   { transform: rotate(0deg); }
-          50%, 95%  { transform: rotate(180deg); }
-          100%      { transform: rotate(180deg); }
+        @keyframes spin {
+          to { transform: rotate(360deg); }
         }
 
         .back-link {
@@ -327,7 +330,7 @@ export default function LoginPage() {
             {error && <div className="error-msg">{error}</div>}
 
             <button type="submit" disabled={loading} className="btn-login">
-              {loading ? <span className="hourglass">⏳</span> : 'Entrar'}
+              {loading ? <span className="spinner" /> : 'Entrar'}
             </button>
           </form>
 
