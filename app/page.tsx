@@ -310,11 +310,7 @@ export default function Home() {
         <div className="corner corner-bl" />
         <div className="corner corner-br" />
 
-        {/* Status */}
-        <div className="status-bar">
-          <div className="status-dot" />
-          Sistema Activo
-        </div>
+
 
         {/* Barras laterais */}
         <div className="side-bar side-bar-left">
@@ -337,10 +333,10 @@ export default function Home() {
           </div>
 
           <h1 className="title">
-            Physio<span className="title-accent">box</span>
+            Physiobox
           </h1>
 
-          <p className="subtitle">Sistema de Gestão Clínica</p>
+          <p className="subtitle">Reabilitação & Performance</p>
 
           <div className="metrics">
             <div className="metric">
@@ -361,8 +357,7 @@ export default function Home() {
 
           <div className="btn-wrap">
             <Link href="/login" className="btn">
-              Iniciar Sessão
-              <span className="btn-arrow">→</span>
+Entrar
             </Link>
           </div>
         </div>
