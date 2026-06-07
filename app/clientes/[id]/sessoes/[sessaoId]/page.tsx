@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import Voltar from '@/components/Voltar'
 
 type Set = {
@@ -51,6 +51,7 @@ const METRICAS = [
 
 export default function SessaoPage() {
   const { id, sessaoId } = useParams()
+  const router = useRouter()
   const [sessao, setSessao] = useState<Sessao | null>(null)
   const [registos, setRegistos] = useState<Registo[]>([])
   const [mostrarForm, setMostrarForm] = useState(false)
@@ -180,7 +181,7 @@ export default function SessaoPage() {
   const temQuestionario = sessao && (sessao.energia || sessao.sono || sessao.alimentacao || sessao.predisposicao)
 
   const c = {
-    page: { minHeight: '100vh', background: '#0a0a0a', padding: '40px 16px 100px' } as React.CSSProperties,
+    page: { minHeight: '100vh', background: '#0a0a0a', padding: '40px 16px 120px' } as React.CSSProperties,
     wrap: { maxWidth: '600px', margin: '0 auto' },
     input: { width: '100%', background: '#0d0d0d', border: '1px solid #1e1e1e', borderRadius: '12px', padding: '14px 16px', fontSize: '14px', color: '#fff', outline: 'none' } as React.CSSProperties,
     label: { fontSize: '9px', color: '#555', textTransform: 'uppercase' as const, letterSpacing: '0.15em', marginBottom: '10px' },
@@ -413,6 +414,31 @@ export default function SessaoPage() {
             ))}
           </div>
         )}
+      </div>
+
+      {/* BOTÃO FIXO — Terminar Sessão */}
+      <div style={{
+        position: 'fixed', bottom: 0, left: 0, right: 0,
+        padding: '16px', paddingBottom: 'calc(16px + env(safe-area-inset-bottom))',
+        background: 'linear-gradient(to top, #0a0a0a 60%, transparent)',
+        zIndex: 30,
+      }}>
+        <div style={{ maxWidth: '600px', margin: '0 auto' }}>
+          <button
+            onClick={() => router.push('/')}
+            style={{
+              width: '100%', background: '#16a34a', color: '#fff',
+              border: 'none', borderRadius: '14px', padding: '16px',
+              fontSize: '12px', fontWeight: 800, textTransform: 'uppercase',
+              letterSpacing: '0.2em', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
+            }}>
+            <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+            Terminar Sessão
+          </button>
+        </div>
       </div>
     </main>
   )
