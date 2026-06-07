@@ -33,6 +33,7 @@ export default function SessaoPage() {
   const { id, sessaoId } = useParams()
   const [registos, setRegistos] = useState<Registo[]>([])
   const [mostrarForm, setMostrarForm] = useState(false)
+  const [editandoId, setEditandoId] = useState<string | null>(null) // ID do registo em edição
   const [tipo, setTipo] = useState<'exercicio' | 'intervencao'>('exercicio')
   const [nomeExercicio, setNomeExercicio] = useState('')
   const [descricao, setDescricao] = useState('')
@@ -88,29 +89,80 @@ export default function SessaoPage() {
     }
   }
 
-  async function adicionarRegisto(e: React.FormEvent) {
-    e.preventDefault()
-    const { data: registo } = await supabase.from('registos').insert({
-      sessao_id: sessaoId,
-      tipo,
-      nome_exercicio: tipo === 'exercicio' ? nomeExercicio : null,
-      descricao: tipo === 'intervencao' ? descricao : null,
-      bilateral: tipo === 'exercicio' ? bilateral : null,
-      lado: tipo === 'exercicio' && !bilateral ? lado : null,
-      notas: notas || null,
-      ordem: registos.length
-    }).select().single()
-
-    if (registo && tipo === 'exercicio') {
-      await supabase.from('sets').insert(
-        sets.map(s => ({ registo_id: registo.id, numero: s.numero, repeticoes: s.repeticoes, carga: s.carga }))
+  // Preencher o formulário com os dados do registo a editar
+  function iniciarEdicao(r: Registo) {
+    setEditandoId(r.id)
+    setTipo(r.tipo as 'exercicio' | 'intervencao')
+    setNomeExercicio(r.nome_exercicio || '')
+    setDescricao(r.descricao || '')
+    setBilateral(r.bilateral ?? true)
+    setLado(r.lado || 'esquerdo')
+    setNotas(r.notas || '')
+    if (r.sets && r.sets.length > 0) {
+      setSets(
+        [...r.sets]
+          .sort((a, b) => a.numero - b.numero)
+          .map(s => ({ numero: s.numero, repeticoes: s.repeticoes, carga: s.carga }))
       )
+    } else {
+      setSets([{ numero: 1, repeticoes: 10, carga: 0 }])
+    }
+    setMostrarForm(true)
+  }
+
+  function cancelarForm() {
+    setMostrarForm(false)
+    setEditandoId(null)
+    setNomeExercicio('')
+    setDescricao('')
+    setBilateral(true)
+    setLado('esquerdo')
+    setNotas('')
+    setSets([{ numero: 1, repeticoes: 10, carga: 0 }])
+  }
+
+  async function guardarRegisto(e: React.FormEvent) {
+    e.preventDefault()
+
+    if (editandoId) {
+      // EDITAR registo existente
+      await supabase.from('registos').update({
+        tipo,
+        nome_exercicio: tipo === 'exercicio' ? nomeExercicio : null,
+        descricao: tipo === 'intervencao' ? descricao : null,
+        bilateral: tipo === 'exercicio' ? bilateral : null,
+        lado: tipo === 'exercicio' && !bilateral ? lado : null,
+        notas: notas || null,
+      }).eq('id', editandoId)
+
+      if (tipo === 'exercicio') {
+        // Apagar os sets antigos e inserir os novos
+        await supabase.from('sets').delete().eq('registo_id', editandoId)
+        await supabase.from('sets').insert(
+          sets.map(s => ({ registo_id: editandoId, numero: s.numero, repeticoes: s.repeticoes, carga: s.carga }))
+        )
+      }
+    } else {
+      // CRIAR novo registo
+      const { data: registo } = await supabase.from('registos').insert({
+        sessao_id: sessaoId,
+        tipo,
+        nome_exercicio: tipo === 'exercicio' ? nomeExercicio : null,
+        descricao: tipo === 'intervencao' ? descricao : null,
+        bilateral: tipo === 'exercicio' ? bilateral : null,
+        lado: tipo === 'exercicio' && !bilateral ? lado : null,
+        notas: notas || null,
+        ordem: registos.length
+      }).select().single()
+
+      if (registo && tipo === 'exercicio') {
+        await supabase.from('sets').insert(
+          sets.map(s => ({ registo_id: registo.id, numero: s.numero, repeticoes: s.repeticoes, carga: s.carga }))
+        )
+      }
     }
 
-    setNomeExercicio(''); setDescricao(''); setBilateral(true)
-    setLado('esquerdo'); setNotas('')
-    setSets([{ numero: 1, repeticoes: 10, carga: 0 }])
-    setMostrarForm(false)
+    cancelarForm()
     carregarRegistos()
   }
 
@@ -167,7 +219,7 @@ export default function SessaoPage() {
         <Voltar />
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '28px', borderBottom: '1px solid #1a1a1a', paddingBottom: '24px' }}>
           <h1 style={{ fontSize: '32px', fontWeight: 800, color: '#fff', textTransform: 'uppercase', letterSpacing: '-0.01em' }}>Sessão</h1>
-          <button onClick={() => setMostrarForm(!mostrarForm)}
+          <button onClick={() => mostrarForm && !editandoId ? cancelarForm() : (setMostrarForm(!mostrarForm), setEditandoId(null))}
             style={{
               width: '44px', height: '44px', borderRadius: '14px',
               background: mostrarForm ? '#1a1a1a' : '#1d4ed8',
@@ -182,7 +234,12 @@ export default function SessaoPage() {
         </div>
 
         {mostrarForm && (
-          <form onSubmit={adicionarRegisto} style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '20px', marginBottom: '24px' }}>
+          <form onSubmit={guardarRegisto} style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '20px', marginBottom: '24px' }}>
+
+            {/* Título do formulário indica se é edição ou criação */}
+            <p style={{ fontSize: '9px', color: editandoId ? '#a855f7' : '#3b82f6', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: '16px', fontWeight: 700 }}>
+              {editandoId ? '✎ Editar Registo' : '+ Novo Registo'}
+            </p>
 
             <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
               <button type="button" onClick={() => setTipo('exercicio')} style={tipoBtn(tipo === 'exercicio')}>Exercício</button>
@@ -259,10 +316,10 @@ export default function SessaoPage() {
 
             <div style={{ display: 'flex', gap: '10px' }}>
               <button type="submit"
-                style={{ flex: 1, background: '#1d4ed8', color: '#fff', border: 'none', borderRadius: '12px', padding: '14px', fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.15em', cursor: 'pointer' }}>
-                Guardar
+                style={{ flex: 1, background: editandoId ? '#7c3aed' : '#1d4ed8', color: '#fff', border: 'none', borderRadius: '12px', padding: '14px', fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.15em', cursor: 'pointer' }}>
+                {editandoId ? 'Atualizar' : 'Guardar'}
               </button>
-              <button type="button" onClick={() => setMostrarForm(false)}
+              <button type="button" onClick={cancelarForm}
                 style={{ background: '#1a1a1a', color: '#666', border: '1px solid #2a2a2a', borderRadius: '12px', padding: '14px 20px', fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.15em', cursor: 'pointer' }}>
                 Cancelar
               </button>
@@ -305,7 +362,28 @@ export default function SessaoPage() {
                     )}
                     {r.notas && <p style={{ fontSize: '10px', color: '#444', textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: '8px' }}>{r.notas}</p>}
                   </div>
-                  <button onClick={() => apagarRegisto(r.id)} style={{ background: 'none', border: 'none', color: '#2a2a2a', fontSize: '20px', cursor: 'pointer', marginLeft: '16px' }}>×</button>
+
+                  {/* Botões de ação: editar + apagar */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginLeft: '16px' }}>
+                    <button
+                      onClick={() => iniciarEdicao(r)}
+                      style={{ background: 'none', border: 'none', color: '#3b3b3b', fontSize: '15px', cursor: 'pointer', padding: '4px 6px', borderRadius: '8px', transition: 'color 0.15s' }}
+                      onMouseEnter={e => (e.currentTarget.style.color = '#6366f1')}
+                      onMouseLeave={e => (e.currentTarget.style.color = '#3b3b3b')}
+                      aria-label="Editar"
+                    >
+                      ✎
+                    </button>
+                    <button
+                      onClick={() => apagarRegisto(r.id)}
+                      style={{ background: 'none', border: 'none', color: '#2a2a2a', fontSize: '20px', cursor: 'pointer', padding: '4px 6px', borderRadius: '8px', transition: 'color 0.15s' }}
+                      onMouseEnter={e => (e.currentTarget.style.color = '#ef4444')}
+                      onMouseLeave={e => (e.currentTarget.style.color = '#2a2a2a')}
+                      aria-label="Apagar"
+                    >
+                      ×
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
