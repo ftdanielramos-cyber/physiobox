@@ -10,8 +10,8 @@ type Cliente = { id: string; nome: string; email: string; telefone: string; data
 type Ficha = { id: string; historico_medico: string; patologias: string; medicacao: string; observacoes: string }
 
 export default function ClientePage() {
-  const params = useParams()
-  const id = Array.isArray(params.id) ? params.id[0] : params.id as string
+  const rawParams = useParams()
+  const [id, setId] = useState<string>('')
   const [cliente, setCliente] = useState<Cliente | null>(null)
   const [ficha, setFicha] = useState<Ficha | null>(null)
   const [sessoes, setSessoes] = useState<any[]>([])
@@ -26,26 +26,37 @@ export default function ClientePage() {
   const [patologias, setPatologias] = useState('')
   const [medicacao, setMedicacao] = useState('')
   const [observacoes, setObservacoes] = useState('')
+  const [erro, setErro] = useState(false)
   const supabase = createClient()
 
   useEffect(() => {
-    if (!id) return  // ← guard
+    const rawId = rawParams?.id
+    const resolvedId = Array.isArray(rawId) ? rawId[0] : typeof rawId === 'string' ? rawId : ''
+    if (!resolvedId || resolvedId === 'undefined') return
+    setId(resolvedId)
+  }, [rawParams])
+
+  useEffect(() => {
+    if (!id) return
     carregarDados()
   }, [id])
 
   async function carregarDados() {
-    const { data: c } = await supabase.from('clientes').select('*').eq('id', id).single()
-    setCliente(c)
-    if (c) { setCNome(c.nome || ''); setCEmail(c.email || ''); setCTelefone(c.telefone || ''); setCDataNasc(c.data_nasc || '') }
-    const { data: f } = await supabase.from('fichas').select('*').eq('cliente_id', id).single()
-    if (f) { setFicha(f); setHistorico(f.historico_medico || ''); setPatologias(f.patologias || ''); setMedicacao(f.medicacao || ''); setObservacoes(f.observacoes || '') }
-    const { data: s } = await supabase.from('sessoes').select('*').eq('cliente_id', id).order('data', { ascending: false })
-    setSessoes(s || [])
+    try {
+      const { data: c, error: ce } = await supabase.from('clientes').select('*').eq('id', id).single()
+      if (ce) { setErro(true); return }
+      setCliente(c)
+      if (c) { setCNome(c.nome || ''); setCEmail(c.email || ''); setCTelefone(c.telefone || ''); setCDataNasc(c.data_nasc || '') }
+      const { data: f } = await supabase.from('fichas').select('*').eq('cliente_id', id).single()
+      if (f) { setFicha(f); setHistorico(f.historico_medico || ''); setPatologias(f.patologias || ''); setMedicacao(f.medicacao || ''); setObservacoes(f.observacoes || '') }
+      const { data: s } = await supabase.from('sessoes').select('*').eq('cliente_id', id).order('data', { ascending: false })
+      setSessoes(s || [])
+    } catch (e) { setErro(true) }
   }
 
   async function guardarContacto(e: React.FormEvent) {
     e.preventDefault()
-    const { error } = await supabase.from('clientes').update({ nome: cNome, email: cEmail || null, telefone: cTelefone || null, data_nasc: cDataNasc || null }).eq('id', id as string)
+    const { error } = await supabase.from('clientes').update({ nome: cNome, email: cEmail || null, telefone: cTelefone || null, data_nasc: cDataNasc || null }).eq('id', id)
     if (error) { alert('Erro ao atualizar: ' + error.message); return }
     setEditandoContacto(false); carregarDados()
   }
@@ -59,12 +70,12 @@ export default function ClientePage() {
   }
 
   async function apagarSessao(sessaoId: string) {
-    if (!confirm('Apagar esta sessão?')) return
+    if (!confirm('Apagar esta sessao?')) return
     await supabase.from('sessoes').delete().eq('id', sessaoId); carregarDados()
   }
 
   const tabs = [
-    { id: 'visao', label: 'Visão Geral' },
+    { id: 'visao', label: 'Visao Geral' },
     { id: 'perfil', label: 'Perfil' },
     { id: 'registos', label: 'Registos' },
     { id: 'progresso', label: 'Progresso' },
@@ -72,6 +83,13 @@ export default function ClientePage() {
 
   const inputClass = "w-full bg-[#0d0d0d] border border-[#1e1e1e] rounded-lg px-4 py-3 text-sm text-white uppercase tracking-wider placeholder:text-[#333] focus:outline-none focus:border-[#3b82f6] resize-none"
   const labelClass = "block text-[9px] font-semibold text-[#444] uppercase tracking-[0.12em] mb-1.5"
+
+  if (erro) return (
+    <main style={{ minHeight: '100vh', background: '#0a0a0a', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '16px' }}>
+      <p style={{ color: '#ef4444', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Erro ao carregar cliente</p>
+      <button onClick={() => { setErro(false); carregarDados() }} style={{ background: '#1d4ed8', color: '#fff', border: 'none', borderRadius: '10px', padding: '10px 20px', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', cursor: 'pointer' }}>Tentar novamente</button>
+    </main>
+  )
 
   if (!cliente) return (
     <main style={{ minHeight: '100vh', background: '#0a0a0a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -100,21 +118,21 @@ export default function ClientePage() {
               <p style={{ fontSize: '9px', color: '#3b82f6', textTransform: 'uppercase', letterSpacing: '0.15em', fontWeight: 700, marginBottom: '12px' }}>Resumo</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <p style={{ fontSize: '10px', color: '#444', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Total de Sessões</p>
+                  <p style={{ fontSize: '10px', color: '#444', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Total de Sessoes</p>
                   <p style={{ fontSize: '10px', color: '#fff', fontWeight: 700 }}>{sessoes.length}</p>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <p style={{ fontSize: '10px', color: '#444', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Última Sessão</p>
-                  <p style={{ fontSize: '10px', color: '#fff', fontWeight: 700 }}>{sessoes.length > 0 ? new Date(sessoes[0].data + 'T00:00:00').toLocaleDateString('pt-PT') : '—'}</p>
+                  <p style={{ fontSize: '10px', color: '#444', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Ultima Sessao</p>
+                  <p style={{ fontSize: '10px', color: '#fff', fontWeight: 700 }}>{sessoes.length > 0 ? new Date(sessoes[0].data + 'T00:00:00').toLocaleDateString('pt-PT') : '--'}</p>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <p style={{ fontSize: '10px', color: '#444', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Ficha Clínica</p>
+                  <p style={{ fontSize: '10px', color: '#444', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Ficha Clinica</p>
                   <p style={{ fontSize: '10px', color: ficha ? '#3b82f6' : '#444', fontWeight: 700 }}>{ficha ? 'Completa' : 'Por preencher'}</p>
                 </div>
               </div>
             </div>
             <a href={`/clientes/${id}/nova-sessao`} style={{ background: '#1d4ed8', border: '1px solid #2563eb', borderRadius: '16px', padding: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', textDecoration: 'none' }}>
-              <p style={{ fontSize: '12px', fontWeight: 700, color: '#fff', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Nova Sessão</p>
+              <p style={{ fontSize: '12px', fontWeight: 700, color: '#fff', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Nova Sessao</p>
               <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '20px' }}>›</span>
             </a>
           </div>
@@ -135,14 +153,14 @@ export default function ClientePage() {
                   <div><label className={labelClass}>Email</label><input value={cEmail} onChange={e => setCEmail(e.target.value)} type="email" className={inputClass} /></div>
                   <div><label className={labelClass}>Telefone</label><input value={cTelefone} onChange={e => setCTelefone(e.target.value)} className={inputClass} /></div>
                   <div><label className={labelClass}>Data de Nascimento</label><input value={cDataNasc} onChange={e => setCDataNasc(e.target.value)} type="date" className={inputClass} /></div>
-                  <button type="submit" style={{ background: '#7c3aed', color: '#fff', border: 'none', borderRadius: '10px', padding: '10px 16px', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', cursor: 'pointer', marginTop: '4px' }}>Guardar Alterações</button>
+                  <button type="submit" style={{ background: '#7c3aed', color: '#fff', border: 'none', borderRadius: '10px', padding: '10px 16px', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', cursor: 'pointer', marginTop: '4px' }}>Guardar Alteracoes</button>
                 </form>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   {[{ label: 'Nome', valor: cliente.nome }, { label: 'Email', valor: cliente.email }, { label: 'Telefone', valor: cliente.telefone }, { label: 'Data Nascimento', valor: cliente.data_nasc ? new Date(cliente.data_nasc + 'T00:00:00').toLocaleDateString('pt-PT') : null }].map(item => (
                     <div key={item.label}>
                       <p style={{ fontSize: '9px', color: '#444', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '4px' }}>{item.label}</p>
-                      <p style={{ fontSize: '13px', color: item.valor ? '#fff' : '#333', fontWeight: 700, textTransform: 'uppercase' }}>{item.valor || '—'}</p>
+                      <p style={{ fontSize: '13px', color: item.valor ? '#fff' : '#333', fontWeight: 700, textTransform: 'uppercase' }}>{item.valor || '--'}</p>
                     </div>
                   ))}
                 </div>
@@ -151,22 +169,22 @@ export default function ClientePage() {
 
             <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '20px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                <p style={{ fontSize: '9px', color: '#3b82f6', textTransform: 'uppercase', letterSpacing: '0.15em', fontWeight: 700 }}>Ficha Clínica</p>
+                <p style={{ fontSize: '9px', color: '#3b82f6', textTransform: 'uppercase', letterSpacing: '0.15em', fontWeight: 700 }}>Ficha Clinica</p>
                 <button onClick={() => setEditandoFicha(!editandoFicha)} style={{ fontSize: '9px', color: editandoFicha ? '#ef4444' : '#555', textTransform: 'uppercase', letterSpacing: '0.1em', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 700 }}>
                   {editandoFicha ? 'Cancelar' : ficha ? 'Editar' : '+ Adicionar'}
                 </button>
               </div>
               {editandoFicha ? (
                 <form onSubmit={guardarFicha} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  <div><label className={labelClass}>Histórico Médico</label><textarea value={historico} onChange={e => setHistorico(e.target.value)} rows={3} className={inputClass} /></div>
+                  <div><label className={labelClass}>Historico Medico</label><textarea value={historico} onChange={e => setHistorico(e.target.value)} rows={3} className={inputClass} /></div>
                   <div><label className={labelClass}>Patologias</label><textarea value={patologias} onChange={e => setPatologias(e.target.value)} rows={2} className={inputClass} /></div>
-                  <div><label className={labelClass}>Medicação</label><textarea value={medicacao} onChange={e => setMedicacao(e.target.value)} rows={2} className={inputClass} /></div>
-                  <div><label className={labelClass}>Observações</label><textarea value={observacoes} onChange={e => setObservacoes(e.target.value)} rows={3} className={inputClass} /></div>
+                  <div><label className={labelClass}>Medicacao</label><textarea value={medicacao} onChange={e => setMedicacao(e.target.value)} rows={2} className={inputClass} /></div>
+                  <div><label className={labelClass}>Observacoes</label><textarea value={observacoes} onChange={e => setObservacoes(e.target.value)} rows={3} className={inputClass} /></div>
                   <button type="submit" style={{ background: '#7c3aed', color: '#fff', border: 'none', borderRadius: '10px', padding: '10px 16px', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', cursor: 'pointer', marginTop: '4px' }}>Guardar</button>
                 </form>
               ) : ficha ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  {[{ label: 'Histórico Médico', valor: ficha.historico_medico }, { label: 'Patologias', valor: ficha.patologias }, { label: 'Medicação', valor: ficha.medicacao }, { label: 'Observações', valor: ficha.observacoes }].filter(i => i.valor).map(item => (
+                  {[{ label: 'Historico Medico', valor: ficha.historico_medico }, { label: 'Patologias', valor: ficha.patologias }, { label: 'Medicacao', valor: ficha.medicacao }, { label: 'Observacoes', valor: ficha.observacoes }].filter(i => i.valor).map(item => (
                     <div key={item.label}>
                       <p style={{ fontSize: '9px', color: '#444', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '4px' }}>{item.label}</p>
                       <p style={{ fontSize: '13px', color: '#aaa', textTransform: 'uppercase' }}>{item.valor}</p>
@@ -174,7 +192,7 @@ export default function ClientePage() {
                   ))}
                 </div>
               ) : (
-                <p style={{ fontSize: '11px', color: '#333', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Sem ficha clínica ainda.</p>
+                <p style={{ fontSize: '11px', color: '#333', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Sem ficha clinica ainda.</p>
               )}
             </div>
           </div>
@@ -185,11 +203,11 @@ export default function ClientePage() {
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
               <GerarReportButton clienteId={cliente.id} nomeCliente={cliente.nome} emailCliente={cliente.email} sessoes={sessoes} />
               <a href={`/clientes/${id}/nova-sessao`} style={{ background: '#1d4ed8', color: '#fff', borderRadius: '10px', padding: '10px 16px', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', textDecoration: 'none' }}>
-                + Nova Sessão
+                + Nova Sessao
               </a>
             </div>
             {sessoes.length === 0 ? (
-              <p style={{ fontSize: '11px', color: '#333', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Sem sessões ainda.</p>
+              <p style={{ fontSize: '11px', color: '#333', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Sem sessoes ainda.</p>
             ) : sessoes.map(s => (
               <div key={s.id} style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', display: 'flex', alignItems: 'center' }}>
                 <a href={`/clientes/${id}/sessoes/${s.id}`} style={{ flex: 1, padding: '16px 20px', textDecoration: 'none' }}>
@@ -199,7 +217,7 @@ export default function ClientePage() {
                   {s.hora && <p style={{ fontSize: '10px', color: '#444', textTransform: 'uppercase', marginTop: '4px' }}>{s.hora.slice(0, 5)}</p>}
                   {s.notas && <p style={{ fontSize: '10px', color: '#333', textTransform: 'uppercase', marginTop: '4px' }}>{s.notas}</p>}
                 </a>
-                <button onClick={() => apagarSessao(s.id)} style={{ background: 'none', border: 'none', color: '#2a2a2a', fontSize: '20px', cursor: 'pointer', padding: '0 16px' }}>×</button>
+                <button onClick={() => apagarSessao(s.id)} style={{ background: 'none', border: 'none', color: '#2a2a2a', fontSize: '20px', cursor: 'pointer', padding: '0 16px' }}>x</button>
               </div>
             ))}
           </div>
@@ -208,7 +226,7 @@ export default function ClientePage() {
         {tab === 'progresso' && (
           <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '20px' }}>
             <p style={{ fontSize: '9px', color: '#3b82f6', textTransform: 'uppercase', letterSpacing: '0.15em', fontWeight: 700, marginBottom: '12px' }}>Progresso</p>
-            <p style={{ fontSize: '11px', color: '#333', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Em breve — gráficos de evolução e métricas.</p>
+            <p style={{ fontSize: '11px', color: '#333', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Em breve -- graficos de evolucao e metricas.</p>
           </div>
         )}
       </div>
