@@ -26,6 +26,7 @@ export default function CalendarioPage() {
   const [clientes, setClientes] = useState<Cliente[]>([])
   const [diaSelected, setDiaSelected] = useState<number | null>(new Date().getDate())
   const [mostrarForm, setMostrarForm] = useState(false)
+  const [editandoId, setEditandoId] = useState<string | null>(null)
   const [clienteId, setClienteId] = useState('')
   const [horaInicio, setHoraInicio] = useState('')
   const [horaFim, setHoraFim] = useState('')
@@ -49,22 +50,50 @@ export default function CalendarioPage() {
     setAgendamentos((data as any) || [])
   }
 
-  async function criarAgendamento(e: React.FormEvent) {
+  function iniciarEdicao(a: Agendamento) {
+    setEditandoId(a.id)
+    setClienteId(a.cliente_id || '')
+    setHoraInicio(a.hora_inicio || '')
+    setHoraFim(a.hora_fim || '')
+    setTipo(a.tipo || '')
+    setNotas(a.notas || '')
+    setMostrarForm(true)
+  }
+
+  function cancelarForm() {
+    setMostrarForm(false)
+    setEditandoId(null)
+    setClienteId(''); setHoraInicio(''); setHoraFim(''); setTipo(''); setNotas('')
+  }
+
+  async function guardarAgendamento(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
-    const { data: { user } } = await supabase.auth.getUser()
     const dataStr = `${mesAtual.getFullYear()}-${String(mesAtual.getMonth() + 1).padStart(2, '0')}-${String(diaSelected).padStart(2, '0')}`
-    await supabase.from('agendamentos').insert({
-      cliente_id: clienteId || null,
-      fisio_id: user?.id,
-      data: dataStr,
-      hora_inicio: horaInicio || null,
-      hora_fim: horaFim || null,
-      tipo: tipo || null,
-      notas: notas || null,
-    })
-    setClienteId(''); setHoraInicio(''); setHoraFim(''); setTipo(''); setNotas('')
-    setMostrarForm(false)
+
+    if (editandoId) {
+      await supabase.from('agendamentos').update({
+        cliente_id: clienteId || null,
+        data: dataStr,
+        hora_inicio: horaInicio || null,
+        hora_fim: horaFim || null,
+        tipo: tipo || null,
+        notas: notas || null,
+      }).eq('id', editandoId)
+    } else {
+      const { data: { user } } = await supabase.auth.getUser()
+      await supabase.from('agendamentos').insert({
+        cliente_id: clienteId || null,
+        fisio_id: user?.id,
+        data: dataStr,
+        hora_inicio: horaInicio || null,
+        hora_fim: horaFim || null,
+        tipo: tipo || null,
+        notas: notas || null,
+      })
+    }
+
+    cancelarForm()
     setLoading(false)
     carregarAgendamentos()
   }
@@ -108,7 +137,7 @@ export default function CalendarioPage() {
     grid: { display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px' },
     dayLabel: { textAlign: 'center' as const, fontSize: '9px', color: '#444', textTransform: 'uppercase' as const, letterSpacing: '0.1em', padding: '4px 0' },
     input: { width: '100%', background: '#0d0d0d', border: '1px solid #1e1e1e', borderRadius: '10px', padding: '12px 16px', fontSize: '13px', color: '#fff', textTransform: 'uppercase' as const, letterSpacing: '0.05em', outline: 'none', marginBottom: '0' } as React.CSSProperties,
-    btnBlue: { background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '10px', padding: '10px 16px', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: '0.1em', cursor: 'pointer' } as React.CSSProperties,
+    btnBlue: (edit: boolean) => ({ background: edit ? '#7c3aed' : '#3b82f6', color: '#fff', border: 'none', borderRadius: '10px', padding: '10px 16px', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: '0.1em', cursor: 'pointer' } as React.CSSProperties),
     btnGhost: { background: '#1a1a1a', color: '#888', border: '1px solid #2a2a2a', borderRadius: '10px', padding: '10px 16px', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: '0.1em', cursor: 'pointer' } as React.CSSProperties,
   }
 
@@ -119,6 +148,7 @@ export default function CalendarioPage() {
         <Voltar />
         <h1 style={s.title}>Calendário</h1>
 
+        {/* CALENDÁRIO */}
         <div style={s.card}>
           <div style={s.navRow}>
             <button style={s.navBtn} onClick={() => setMesAtual(new Date(mesAtual.getFullYear(), mesAtual.getMonth() - 1))}>‹</button>
@@ -137,10 +167,9 @@ export default function CalendarioPage() {
               const temAg = agendamentosNoDia(dia).length > 0
               const isHoje = hoje.getDate() === dia && hoje.getMonth() === mesAtual.getMonth() && hoje.getFullYear() === mesAtual.getFullYear()
               const isSelected = diaSelected === dia
-
               return (
                 <button key={dia}
-                  onClick={() => { setDiaSelected(dia); setMostrarForm(false) }}
+                  onClick={() => { setDiaSelected(dia); cancelarForm() }}
                   style={{
                     display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
                     aspectRatio: '1/1', borderRadius: '8px', fontSize: '11px', fontWeight: 700,
@@ -156,15 +185,20 @@ export default function CalendarioPage() {
           </div>
         </div>
 
+        {/* DIA SELECIONADO */}
         {diaSelected && (
           <div style={s.card}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
               <span style={{ fontSize: '11px', color: '#3b82f6', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>{dataSelectedStr}</span>
-              <button style={s.btnGhost} onClick={() => setMostrarForm(!mostrarForm)}>+ Agendar</button>
+              <button style={s.btnGhost} onClick={() => { cancelarForm(); setMostrarForm(true) }}>+ Agendar</button>
             </div>
 
+            {/* FORMULÁRIO */}
             {mostrarForm && (
-              <form onSubmit={criarAgendamento} style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '16px', paddingBottom: '16px', borderBottom: '1px solid #1a1a1a' }}>
+              <form onSubmit={guardarAgendamento} style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '16px', paddingBottom: '16px', borderBottom: '1px solid #1a1a1a' }}>
+                <p style={{ fontSize: '9px', color: editandoId ? '#a855f7' : '#3b82f6', textTransform: 'uppercase', letterSpacing: '0.15em', fontWeight: 700, margin: 0 }}>
+                  {editandoId ? '✎ Editar Agendamento' : '+ Novo Agendamento'}
+                </p>
                 <select value={clienteId} onChange={e => setClienteId(e.target.value)} style={s.input}>
                   <option value="">Sem Cliente Associado</option>
                   {clientes.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
@@ -182,12 +216,15 @@ export default function CalendarioPage() {
                 <input value={tipo} onChange={e => setTipo(e.target.value)} placeholder="Tipo de Sessão" style={s.input} />
                 <textarea value={notas} onChange={e => setNotas(e.target.value)} placeholder="Notas" rows={2} style={{ ...s.input, resize: 'none' }} />
                 <div style={{ display: 'flex', gap: '8px' }}>
-                  <button type="submit" disabled={loading} style={s.btnBlue}>Guardar</button>
-                  <button type="button" onClick={() => setMostrarForm(false)} style={s.btnGhost}>Cancelar</button>
+                  <button type="submit" disabled={loading} style={s.btnBlue(!!editandoId)}>
+                    {editandoId ? 'Atualizar' : 'Guardar'}
+                  </button>
+                  <button type="button" onClick={cancelarForm} style={s.btnGhost}>Cancelar</button>
                 </div>
               </form>
             )}
 
+            {/* LISTA */}
             {agendamentosDiaSelected.length === 0 ? (
               <p style={{ fontSize: '11px', color: '#444', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Sem agendamentos.</p>
             ) : (
@@ -199,7 +236,7 @@ export default function CalendarioPage() {
                       <div style={{ width: '2px', background: '#3b82f6', borderRadius: '1px', alignSelf: 'stretch' }} />
                       <div>
                         <p style={{ fontSize: '12px', fontWeight: 700, color: '#fff', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                          {a.clientes?.nome || 'Sem Cliente'} →
+                          {a.clientes?.nome || 'Sem Cliente'}
                         </p>
                         {(a.hora_inicio || a.hora_fim) && (
                           <p style={{ fontSize: '10px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: '2px' }}>
@@ -210,7 +247,21 @@ export default function CalendarioPage() {
                         {a.notas && <p style={{ fontSize: '10px', color: '#444', textTransform: 'uppercase' }}>{a.notas}</p>}
                       </div>
                     </a>
-                    <button onClick={() => apagarAgendamento(a.id)} style={{ background: 'none', border: 'none', color: '#333', fontSize: '20px', cursor: 'pointer' }}>×</button>
+                    {/* Botões editar + apagar */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginLeft: '8px' }}>
+                      <button
+                        onClick={() => iniciarEdicao(a)}
+                        style={{ background: 'none', border: 'none', color: '#555', fontSize: '15px', cursor: 'pointer', padding: '4px 6px', borderRadius: '8px' }}
+                        onMouseEnter={e => (e.currentTarget.style.color = '#6366f1')}
+                        onMouseLeave={e => (e.currentTarget.style.color = '#555')}
+                        aria-label="Editar">✎</button>
+                      <button
+                        onClick={() => apagarAgendamento(a.id)}
+                        style={{ background: 'none', border: 'none', color: '#333', fontSize: '20px', cursor: 'pointer', padding: '4px 6px', borderRadius: '8px' }}
+                        onMouseEnter={e => (e.currentTarget.style.color = '#ef4444')}
+                        onMouseLeave={e => (e.currentTarget.style.color = '#333')}
+                        aria-label="Apagar">×</button>
+                    </div>
                   </div>
                 ))}
               </div>
