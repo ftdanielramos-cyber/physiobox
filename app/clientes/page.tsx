@@ -1,9 +1,12 @@
-'use client'
 
+raw
+Clientes page · TSX
+'use client'
+ 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase'
 import Voltar from '@/components/Voltar'
-
+ 
 type Cliente = {
   id: string
   nome: string
@@ -11,77 +14,108 @@ type Cliente = {
   telefone: string
   data_nasc: string
 }
-
+ 
 export default function ClientesPage() {
   const [clientes, setClientes] = useState<Cliente[]>([])
   const [loading, setLoading] = useState(true)
   const [mostrarForm, setMostrarForm] = useState(false)
+  const [editandoId, setEditandoId] = useState<string | null>(null)
   const [pesquisa, setPesquisa] = useState('')
   const [nome, setNome] = useState('')
   const [email, setEmail] = useState('')
   const [telefone, setTelefone] = useState('')
   const [dataNasc, setDataNasc] = useState('')
   const supabase = createClient()
-
+ 
   useEffect(() => { carregarClientes() }, [])
-
-
+ 
   async function carregarClientes() {
     const { data } = await supabase.from('clientes').select('*').order('nome')
     setClientes(data || [])
     setLoading(false)
   }
-
-  async function adicionarCliente(e: React.FormEvent) {
-    e.preventDefault()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-      alert('Sessão expirada. Faz login outra vez.')
-      window.location.href = '/login'
-      return
-    }
-    const { error } = await supabase.from('clientes').insert({
-      nome, email: email || null, telefone: telefone || null,
-      data_nasc: dataNasc || null, created_by: user.id
-    })
-    if (error) {
-      alert('Erro ao guardar: ' + error.message)
-      return
-    }
-    setNome(''); setEmail(''); setTelefone(''); setDataNasc('')
+ 
+  function iniciarEdicao(c: Cliente) {
+    setEditandoId(c.id)
+    setNome(c.nome || '')
+    setEmail(c.email || '')
+    setTelefone(c.telefone || '')
+    setDataNasc(c.data_nasc || '')
+    setMostrarForm(true)
+  }
+ 
+  function cancelarForm() {
     setMostrarForm(false)
+    setEditandoId(null)
+    setNome(''); setEmail(''); setTelefone(''); setDataNasc('')
+  }
+ 
+  async function guardarCliente(e: React.FormEvent) {
+    e.preventDefault()
+ 
+    if (editandoId) {
+      // EDITAR cliente existente
+      const { error } = await supabase.from('clientes').update({
+        nome,
+        email: email || null,
+        telefone: telefone || null,
+        data_nasc: dataNasc || null,
+      }).eq('id', editandoId)
+ 
+      if (error) {
+        alert('Erro ao atualizar: ' + error.message)
+        return
+      }
+    } else {
+      // CRIAR novo cliente
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        alert('Sessão expirada. Faz login outra vez.')
+        window.location.href = '/login'
+        return
+      }
+      const { error } = await supabase.from('clientes').insert({
+        nome, email: email || null, telefone: telefone || null,
+        data_nasc: dataNasc || null, created_by: user.id
+      })
+      if (error) {
+        alert('Erro ao guardar: ' + error.message)
+        return
+      }
+    }
+ 
+    cancelarForm()
     carregarClientes()
   }
-
+ 
   async function apagarCliente(clienteId: string) {
     if (!confirm('Tens a certeza? Todos os dados do cliente serão apagados.')) return
     await supabase.from('clientes').delete().eq('id', clienteId)
     carregarClientes()
   }
-
+ 
   const clientesFiltrados = clientes.filter(c =>
     c.nome?.toLowerCase().includes(pesquisa.toLowerCase()) ||
     c.email?.toLowerCase().includes(pesquisa.toLowerCase()) ||
     c.telefone?.includes(pesquisa)
   )
-
+ 
   const inputClass = "w-full bg-[#0d0d0d] border border-[#222] rounded-xl px-4 py-3 text-sm text-white tracking-wide placeholder:text-[#3a3a3a] focus:outline-none focus:border-[#3b82f6] transition-colors"
   const labelClass = "block text-[10px] font-semibold text-[#555] uppercase tracking-[0.12em] mb-1.5"
-
+ 
   return (
     <main className="min-h-screen bg-[#0a0a0a] pb-24">
       <div className="max-w-2xl mx-auto px-4 py-10">
-
+ 
         <Voltar />
-
+ 
         <div className="flex items-center justify-between mb-6 border-b border-[#1a1a1a] pb-6">
           <h1 className="text-4xl font-extrabold text-white uppercase tracking-tight">Clientes</h1>
           <button
-            onClick={() => setMostrarForm(true)}
+            onClick={() => { setEditandoId(null); setMostrarForm(true) }}
             style={{
               width: '44px', height: '44px', borderRadius: '14px',
-              background: '#1d4ed8',
-              border: 'none',
+              background: '#1d4ed8', border: 'none',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               cursor: 'pointer', color: '#fff', transition: 'background 0.15s', flexShrink: 0
             }}
@@ -91,10 +125,9 @@ export default function ClientesPage() {
             </svg>
           </button>
         </div>
-
+ 
         {/* PESQUISA */}
         <div className="relative mb-6">
-          {/* linha decorativa esquerda */}
           <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '3px', background: 'linear-gradient(180deg, #3b82f6 0%, transparent 100%)', borderRadius: '2px', zIndex: 1 }} />
           <svg width="16" height="16" fill="none" stroke="#3b82f6" strokeWidth="2" viewBox="0 0 24 24"
             style={{ position: 'absolute', left: '20px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', opacity: 0.7 }}>
@@ -114,7 +147,7 @@ export default function ClientesPage() {
             </button>
           )}
         </div>
-
+ 
         {/* LISTA */}
         {loading ? (
           <p className="text-[#333] text-xs uppercase tracking-widest">A carregar...</p>
@@ -125,24 +158,42 @@ export default function ClientesPage() {
             {clientesFiltrados.map(c => (
               <div key={c.id} className="relative group flex items-center bg-[#111] border border-[#1a1a1a] rounded-xl hover:border-[#2a2a2a] transition-colors">
                 <a href={`/clientes/${c.id}`} className="flex items-center gap-4 flex-1 min-w-0 px-5 py-4">
-                  {/* ícone pessoa */}
                   <svg width="18" height="18" fill="none" stroke="white" strokeWidth="1.6" viewBox="0 0 24 24" style={{ flexShrink: 0, opacity: 0.5 }}>
                     <circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
                   </svg>
                   <div className="min-w-0">
                     <p className="text-sm font-bold uppercase tracking-wider truncate text-white">{c.nome}</p>
+                    {(c.email || c.telefone) && (
+                      <p className="text-xs text-[#444] truncate mt-0.5">{c.email || c.telefone}</p>
+                    )}
                   </div>
                 </a>
-
-                {/* LIXO */}
+ 
+                {/* Botão EDITAR */}
+                <button
+                  onClick={() => iniciarEdicao(c)}
+                  className="flex items-center justify-center w-9 h-9 rounded-xl transition-all mx-1"
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', flexShrink: 0, color: '#3b3b3b' }}
+                  onMouseEnter={e => (e.currentTarget.style.color = '#6366f1')}
+                  onMouseLeave={e => (e.currentTarget.style.color = '#3b3b3b')}
+                  aria-label="Editar cliente">
+                  <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                  </svg>
+                </button>
+ 
+                {/* Botão APAGAR */}
                 <button
                   onClick={() => apagarCliente(c.id)}
-                  className="flex items-center justify-center w-9 h-9 rounded-xl text-[#666] hover:text-red-400 hover:bg-[#1a1a1a] transition-all mx-3"
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', flexShrink: 0 }}
+                  className="flex items-center justify-center w-9 h-9 rounded-xl transition-all mx-2"
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', flexShrink: 0, color: '#3b3b3b' }}
+                  onMouseEnter={e => (e.currentTarget.style.color = '#ef4444')}
+                  onMouseLeave={e => (e.currentTarget.style.color = '#3b3b3b')}
                   aria-label="Eliminar cliente">
-                  <svg width="17" height="17" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                    <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/>
-                    <path d="M9 6V4h6v2"/>
+                  <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/>
+                    <path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
                   </svg>
                 </button>
               </div>
@@ -150,12 +201,11 @@ export default function ClientesPage() {
           </div>
         )}
       </div>
-
-      {/* SLIDE-IN PANEL — Novo Cliente */}
+ 
       {/* Backdrop */}
       {mostrarForm && (
         <div
-          onClick={() => setMostrarForm(false)}
+          onClick={cancelarForm}
           style={{
             position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)',
             backdropFilter: 'blur(4px)', zIndex: 40,
@@ -163,8 +213,8 @@ export default function ClientesPage() {
           }}
         />
       )}
-
-      {/* Panel */}
+ 
+      {/* SLIDE-IN PANEL */}
       <div style={{
         position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 50,
         transform: mostrarForm ? 'translateY(0)' : 'translateY(100%)',
@@ -172,7 +222,6 @@ export default function ClientesPage() {
         background: '#111',
         borderTop: '1px solid #1e1e1e',
         borderRadius: '20px 20px 0 0',
-        padding: '0',
         maxHeight: '90vh',
         overflowY: 'auto',
       }}>
@@ -180,34 +229,34 @@ export default function ClientesPage() {
         <div style={{ display: 'flex', justifyContent: 'center', padding: '14px 0 0' }}>
           <div style={{ width: '36px', height: '4px', borderRadius: '2px', background: '#2a2a2a' }} />
         </div>
-
+ 
         <div style={{ padding: '20px 24px 40px' }}>
           {/* Header */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '28px' }}>
             <div>
-              <p style={{ fontSize: '10px', color: '#3b82f6', textTransform: 'uppercase', letterSpacing: '0.15em', fontWeight: 700, marginBottom: '4px' }}>
-                Novo Registo
+              <p style={{ fontSize: '10px', color: editandoId ? '#a855f7' : '#3b82f6', textTransform: 'uppercase', letterSpacing: '0.15em', fontWeight: 700, marginBottom: '4px' }}>
+                {editandoId ? 'Editar Registo' : 'Novo Registo'}
               </p>
               <h2 style={{ fontSize: '22px', fontWeight: 800, color: '#fff', textTransform: 'uppercase', letterSpacing: '-0.02em', margin: 0 }}>
-                Adicionar Cliente
+                {editandoId ? 'Editar Cliente' : 'Adicionar Cliente'}
               </h2>
             </div>
             <button
-              onClick={() => setMostrarForm(false)}
+              onClick={cancelarForm}
               style={{
                 width: '36px', height: '36px', borderRadius: '10px',
                 background: '#1a1a1a', border: '1px solid #222',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                cursor: 'pointer', color: '#555', transition: 'all 0.15s'
+                cursor: 'pointer', color: '#555',
               }}>
               <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
                 <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
               </svg>
             </button>
           </div>
-
+ 
           {/* Form */}
-          <form onSubmit={adicionarCliente} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <form onSubmit={guardarCliente} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <div>
               <label className={labelClass}>Nome Completo *</label>
               <input value={nome} onChange={e => setNome(e.target.value)}
@@ -228,32 +277,30 @@ export default function ClientesPage() {
               <input value={dataNasc} onChange={e => setDataNasc(e.target.value)}
                 type="date" className={inputClass} />
             </div>
-
-            {/* Divider */}
+ 
             <div style={{ height: '1px', background: '#1a1a1a', margin: '4px 0' }} />
-
-            {/* Actions */}
+ 
             <div style={{ display: 'flex', gap: '10px' }}>
               <button
                 type="submit"
                 style={{
-                  flex: 1, background: '#1d4ed8', color: '#fff',
+                  flex: 1, background: editandoId ? '#7c3aed' : '#1d4ed8', color: '#fff',
                   border: 'none', borderRadius: '12px', padding: '14px',
                   fontSize: '12px', fontWeight: 700, textTransform: 'uppercase',
                   letterSpacing: '0.1em', cursor: 'pointer', transition: 'background 0.15s'
                 }}
-                onMouseEnter={e => (e.currentTarget.style.background = '#1e40af')}
-                onMouseLeave={e => (e.currentTarget.style.background = '#1d4ed8')}>
-                Guardar Cliente
+                onMouseEnter={e => (e.currentTarget.style.background = editandoId ? '#6d28d9' : '#1e40af')}
+                onMouseLeave={e => (e.currentTarget.style.background = editandoId ? '#7c3aed' : '#1d4ed8')}>
+                {editandoId ? 'Atualizar Cliente' : 'Guardar Cliente'}
               </button>
               <button
                 type="button"
-                onClick={() => setMostrarForm(false)}
+                onClick={cancelarForm}
                 style={{
                   padding: '14px 20px', background: '#1a1a1a',
                   border: '1px solid #222', borderRadius: '12px',
                   fontSize: '12px', fontWeight: 700, textTransform: 'uppercase',
-                  letterSpacing: '0.1em', color: '#555', cursor: 'pointer', transition: 'all 0.15s'
+                  letterSpacing: '0.1em', color: '#555', cursor: 'pointer',
                 }}
                 onMouseEnter={e => { e.currentTarget.style.color = '#fff'; e.currentTarget.style.borderColor = '#333' }}
                 onMouseLeave={e => { e.currentTarget.style.color = '#555'; e.currentTarget.style.borderColor = '#222' }}>
@@ -263,7 +310,7 @@ export default function ClientesPage() {
           </form>
         </div>
       </div>
-
+ 
       <style>{`
         @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
       `}</style>
