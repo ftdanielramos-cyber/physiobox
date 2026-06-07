@@ -2,287 +2,236 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase'
-import { useParams } from 'next/navigation'
 import { useTranslation } from '@/lib/useTranslation'
 import Voltar from '@/components/Voltar'
-import GerarReportButton from '@/components/reports/GerarReportButton'
 
-type Cliente = { id: string; nome: string; email: string; telefone: string; data_nasc: string }
-type Ficha = { id: string; historico_medico: string; patologias: string; medicacao: string; observacoes: string }
+type Cliente = {
+  id: string
+  nome: string
+  email: string
+  telefone: string
+  data_nasc: string
+}
 
-export default function ClientePage() {
+export default function ClientesPage() {
   const { t } = useTranslation()
-  const { id } = useParams()
-  const [cliente, setCliente] = useState<Cliente | null>(null)
-  const [ficha, setFicha] = useState<Ficha | null>(null)
-  const [sessoes, setSessoes] = useState<any[]>([])
+  const [clientes, setClientes] = useState<Cliente[]>([])
   const [loading, setLoading] = useState(true)
-  const [erro, setErro] = useState<string | null>(null)
-  const [tab, setTab] = useState('visao')
-  const [editandoContacto, setEditandoContacto] = useState(false)
-  const [cNome, setCNome] = useState('')
-  const [cEmail, setCEmail] = useState('')
-  const [cTelefone, setCTelefone] = useState('')
-  const [cDataNasc, setCDataNasc] = useState('')
-  const [editandoFicha, setEditandoFicha] = useState(false)
-  const [historico, setHistorico] = useState('')
-  const [patologias, setPatologias] = useState('')
-  const [medicacao, setMedicacao] = useState('')
-  const [observacoes, setObservacoes] = useState('')
+  const [mostrarForm, setMostrarForm] = useState(false)
+  const [editandoId, setEditandoId] = useState<string | null>(null)
+  const [pesquisa, setPesquisa] = useState('')
+  const [nome, setNome] = useState('')
+  const [email, setEmail] = useState('')
+  const [telefone, setTelefone] = useState('')
+  const [dataNasc, setDataNasc] = useState('')
   const supabase = createClient()
 
-  useEffect(() => { carregarDados() }, [id])
+  useEffect(() => { carregarClientes() }, [])
 
-  async function carregarDados() {
-    setLoading(true)
-    setErro(null)
-
-    const { data: c, error: erroCliente } = await supabase
-      .from('clientes').select('*').eq('id', id).single()
-
-    if (erroCliente) {
-      console.error('Erro ao carregar cliente:', erroCliente)
-      setErro(erroCliente.message)
-      setLoading(false)
-      return
-    }
-
-    setCliente(c)
-    if (c) {
-      setCNome(c.nome || '')
-      setCEmail(c.email || '')
-      setCTelefone(c.telefone || '')
-      setCDataNasc(c.data_nasc || '')
-    }
-
-    const { data: f, error: erroFicha } = await supabase
-      .from('fichas').select('*').eq('cliente_id', id).single()
-
-    if (f) {
-      setFicha(f)
-      setHistorico(f.historico_medico || '')
-      setPatologias(f.patologias || '')
-      setMedicacao(f.medicacao || '')
-      setObservacoes(f.observacoes || '')
-    }
-    // erroFicha pode ser "PGRST116" (0 rows) — não é erro real, só significa que não há ficha ainda
-    if (erroFicha && erroFicha.code !== 'PGRST116') {
-      console.error('Erro ao carregar ficha:', erroFicha)
-    }
-
-    const { data: s, error: erroSessoes } = await supabase
-      .from('sessoes').select('*').eq('cliente_id', id).order('data', { ascending: false })
-
-    if (erroSessoes) {
-      console.error('Erro ao carregar sessões:', erroSessoes)
-    }
-
-    setSessoes(s || [])
+  async function carregarClientes() {
+    const { data } = await supabase.from('clientes').select('*').order('nome')
+    setClientes(data || [])
     setLoading(false)
   }
 
-  async function guardarContacto(e: React.FormEvent) {
+  function iniciarEdicao(c: Cliente) {
+    setEditandoId(c.id)
+    setNome(c.nome || '')
+    setEmail(c.email || '')
+    setTelefone(c.telefone || '')
+    setDataNasc(c.data_nasc || '')
+    setMostrarForm(true)
+  }
+
+  function cancelarForm() {
+    setMostrarForm(false)
+    setEditandoId(null)
+    setNome(''); setEmail(''); setTelefone(''); setDataNasc('')
+  }
+
+  async function guardarCliente(e: React.FormEvent) {
     e.preventDefault()
-    const { error } = await supabase
-      .from('clientes')
-      .update({ nome: cNome, email: cEmail || null, telefone: cTelefone || null, data_nasc: cDataNasc || null })
-      .eq('id', id as string)
-    if (error) { alert(t.error + ': ' + error.message); return }
-    setEditandoContacto(false)
-    carregarDados()
+    if (editandoId) {
+      const { error } = await supabase.from('clientes').update({
+        nome, email: email || null, telefone: telefone || null, data_nasc: dataNasc || null,
+      }).eq('id', editandoId)
+      if (error) { alert(t.error + ': ' + error.message); return }
+    } else {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) { window.location.href = '/login'; return }
+      const { error } = await supabase.from('clientes').insert({
+        nome, email: email || null, telefone: telefone || null,
+        data_nasc: dataNasc || null, created_by: user.id
+      })
+      if (error) { alert(t.error + ': ' + error.message); return }
+    }
+    cancelarForm()
+    carregarClientes()
   }
 
-  async function guardarFicha(e: React.FormEvent) {
-    e.preventDefault()
-    const dados = { historico_medico: historico, patologias, medicacao, observacoes, updated_at: new Date().toISOString() }
-    if (ficha) { await supabase.from('fichas').update(dados).eq('id', ficha.id) }
-    else { await supabase.from('fichas').insert({ ...dados, cliente_id: id }) }
-    setEditandoFicha(false)
-    carregarDados()
+  async function apagarCliente(clienteId: string) {
+    if (!confirm(t.deleteClientConfirm)) return
+    await supabase.from('clientes').delete().eq('id', clienteId)
+    carregarClientes()
   }
 
-  async function apagarSessao(sessaoId: string) {
-    if (!confirm(t.delete + '?')) return
-    await supabase.from('sessoes').delete().eq('id', sessaoId)
-    carregarDados()
-  }
-
-  const tabs = [
-    { id: 'visao', label: t.overview },
-    { id: 'perfil', label: t.profile },
-    { id: 'registos', label: t.records },
-    { id: 'progresso', label: t.progress },
-  ]
-
-  const inputClass = "w-full bg-[#0d0d0d] border border-[#1e1e1e] rounded-lg px-4 py-3 text-sm text-white uppercase tracking-wider placeholder:text-[#333] focus:outline-none focus:border-[#3b82f6] resize-none"
-  const labelClass = "block text-[9px] font-semibold text-[#444] uppercase tracking-[0.12em] mb-1.5"
-
-  if (loading) return (
-    <main style={{ minHeight: '100vh', background: '#0a0a0a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <p style={{ color: '#333', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.1em' }}>{t.loading}</p>
-    </main>
+  const clientesFiltrados = clientes.filter(c =>
+    c.nome?.toLowerCase().includes(pesquisa.toLowerCase()) ||
+    c.email?.toLowerCase().includes(pesquisa.toLowerCase()) ||
+    c.telefone?.includes(pesquisa)
   )
 
-  if (erro) return (
-    <main style={{ minHeight: '100vh', background: '#0a0a0a', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '12px' }}>
-      <p style={{ color: '#ef4444', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Erro ao carregar cliente</p>
-      <p style={{ color: '#333', fontSize: '10px', letterSpacing: '0.05em' }}>{erro}</p>
-      <button onClick={carregarDados} style={{ marginTop: '8px', color: '#3b82f6', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.1em', background: 'none', border: 'none', cursor: 'pointer' }}>
-        Tentar novamente
-      </button>
-    </main>
-  )
-
-  if (!cliente) return (
-    <main style={{ minHeight: '100vh', background: '#0a0a0a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <p style={{ color: '#333', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Cliente não encontrado.</p>
-    </main>
-  )
+  const inputClass = "w-full bg-[#0d0d0d] border border-[#222] rounded-xl px-4 py-3 text-sm text-white tracking-wide placeholder:text-[#3a3a3a] focus:outline-none focus:border-[#3b82f6] transition-colors"
+  const labelClass = "block text-[10px] font-semibold text-[#555] uppercase tracking-[0.12em] mb-1.5"
 
   return (
     <main className="min-h-screen bg-[#0a0a0a] pb-24">
       <div className="max-w-2xl mx-auto px-4 py-10">
         <Voltar />
-        <h1 className="text-4xl font-extrabold text-white uppercase tracking-tight mb-6">{cliente.nome}</h1>
 
-        <div style={{ display: 'flex', gap: '4px', borderBottom: '1px solid #1a1a1a', marginBottom: '24px' }}>
-          {tabs.map(tb => (
-            <button key={tb.id} onClick={() => setTab(tb.id)}
-              style={{ padding: '8px 12px', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', cursor: 'pointer', background: 'none', border: 'none', borderBottom: tab === tb.id ? '2px solid #3b82f6' : '2px solid transparent', color: tab === tb.id ? '#3b82f6' : '#444', transition: 'all 0.15s' }}>
-              {tb.label}
-            </button>
-          ))}
+        <div className="flex items-center justify-between mb-6 border-b border-[#1a1a1a] pb-6">
+          <h1 className="text-4xl font-extrabold text-white uppercase tracking-tight">{t.clientsTitle}</h1>
+          <button onClick={() => { setEditandoId(null); setMostrarForm(true) }}
+            style={{ width: '44px', height: '44px', borderRadius: '14px', background: '#1d4ed8', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#fff', flexShrink: 0 }}
+            aria-label={t.newClient}>
+            <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+          </button>
         </div>
 
-        {tab === 'visao' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '20px' }}>
-              <p style={{ fontSize: '9px', color: '#3b82f6', textTransform: 'uppercase', letterSpacing: '0.15em', fontWeight: 700, marginBottom: '12px' }}>Resumo</p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {[
-                  { label: t.totalSessions, valor: String(sessoes.length) },
-                  { label: t.lastSession, valor: sessoes.length > 0 ? new Date(sessoes[0].data + 'T00:00:00').toLocaleDateString('pt-PT') : '—' },
-                  { label: t.clinicalFile, valor: ficha ? t.complete : t.toFill, cor: ficha ? '#3b82f6' : '#444' },
-                ].map(item => (
-                  <div key={item.label} style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <p style={{ fontSize: '10px', color: '#444', textTransform: 'uppercase', letterSpacing: '0.1em' }}>{item.label}</p>
-                    <p style={{ fontSize: '10px', color: (item as any).cor || '#fff', fontWeight: 700 }}>{item.valor}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <a href={`/clientes/${id}/nova-sessao`}
-              style={{ background: '#1d4ed8', border: '1px solid #2563eb', borderRadius: '16px', padding: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', textDecoration: 'none' }}>
-              <p style={{ fontSize: '12px', fontWeight: 700, color: '#fff', textTransform: 'uppercase', letterSpacing: '0.1em' }}>+ {t.newSession}</p>
-              <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '20px' }}>›</span>
-            </a>
-          </div>
-        )}
+        {/* Pesquisa */}
+        <div className="relative mb-6">
+          <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '3px', background: 'linear-gradient(180deg, #3b82f6 0%, transparent 100%)', borderRadius: '2px', zIndex: 1 }} />
+          <svg width="16" height="16" fill="none" stroke="#3b82f6" strokeWidth="2" viewBox="0 0 24 24"
+            style={{ position: 'absolute', left: '20px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', opacity: 0.7 }}>
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          <input value={pesquisa} onChange={e => setPesquisa(e.target.value)}
+            placeholder={t.searchClients}
+            className="w-full bg-transparent border-0 px-5 py-4 text-base font-light text-white placeholder:text-[#2a2a2a] focus:outline-none"
+            style={{ paddingLeft: '48px', paddingRight: pesquisa ? '44px' : '18px', letterSpacing: '0.2em', borderBottom: `2px solid ${pesquisa ? '#3b82f6' : '#1e1e1e'}`, transition: 'border-color 0.2s' }}
+          />
+          {pesquisa && (
+            <button onClick={() => setPesquisa('')}
+              style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#3b82f6', padding: '4px' }}>
+              <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            </button>
+          )}
+        </div>
 
-        {tab === 'perfil' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '20px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                <p style={{ fontSize: '9px', color: '#3b82f6', textTransform: 'uppercase', letterSpacing: '0.15em', fontWeight: 700 }}>{t.contact}</p>
-                <button onClick={() => setEditandoContacto(!editandoContacto)}
-                  style={{ fontSize: '9px', color: editandoContacto ? '#ef4444' : '#555', textTransform: 'uppercase', letterSpacing: '0.1em', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 700 }}>
-                  {editandoContacto ? t.cancel : t.edit}
-                </button>
-              </div>
-              {editandoContacto ? (
-                <form onSubmit={guardarContacto} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  <div><label className={labelClass}>{t.fullName} *</label><input value={cNome} onChange={e => setCNome(e.target.value)} required className={inputClass} /></div>
-                  <div><label className={labelClass}>{t.email}</label><input value={cEmail} onChange={e => setCEmail(e.target.value)} type="email" className={inputClass} /></div>
-                  <div><label className={labelClass}>{t.phone}</label><input value={cTelefone} onChange={e => setCTelefone(e.target.value)} className={inputClass} /></div>
-                  <div><label className={labelClass}>{t.birthDate}</label><input value={cDataNasc} onChange={e => setCDataNasc(e.target.value)} type="date" className={inputClass} /></div>
-                  <button type="submit" style={{ background: '#7c3aed', color: '#fff', border: 'none', borderRadius: '10px', padding: '10px 16px', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', cursor: 'pointer' }}>{t.saveChanges}</button>
-                </form>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  {[
-                    { label: t.fullName, valor: cliente.nome },
-                    { label: t.email, valor: cliente.email },
-                    { label: t.phone, valor: cliente.telefone },
-                    { label: t.birthDate, valor: cliente.data_nasc ? new Date(cliente.data_nasc + 'T00:00:00').toLocaleDateString('pt-PT') : null },
-                  ].map(item => (
-                    <div key={item.label}>
-                      <p style={{ fontSize: '9px', color: '#444', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '4px' }}>{item.label}</p>
-                      <p style={{ fontSize: '13px', color: item.valor ? '#fff' : '#333', fontWeight: 700, textTransform: 'uppercase' }}>{item.valor || '—'}</p>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '20px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                <p style={{ fontSize: '9px', color: '#3b82f6', textTransform: 'uppercase', letterSpacing: '0.15em', fontWeight: 700 }}>{t.clinicalFile}</p>
-                <button onClick={() => setEditandoFicha(!editandoFicha)}
-                  style={{ fontSize: '9px', color: editandoFicha ? '#ef4444' : '#555', textTransform: 'uppercase', letterSpacing: '0.1em', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 700 }}>
-                  {editandoFicha ? t.cancel : ficha ? t.edit : t.addFile}
-                </button>
-              </div>
-              {editandoFicha ? (
-                <form onSubmit={guardarFicha} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  <div><label className={labelClass}>{t.medicalHistory}</label><textarea value={historico} onChange={e => setHistorico(e.target.value)} rows={3} className={inputClass} /></div>
-                  <div><label className={labelClass}>{t.pathologies}</label><textarea value={patologias} onChange={e => setPatologias(e.target.value)} rows={2} className={inputClass} /></div>
-                  <div><label className={labelClass}>{t.medication}</label><textarea value={medicacao} onChange={e => setMedicacao(e.target.value)} rows={2} className={inputClass} /></div>
-                  <div><label className={labelClass}>{t.observations}</label><textarea value={observacoes} onChange={e => setObservacoes(e.target.value)} rows={3} className={inputClass} /></div>
-                  <button type="submit" style={{ background: '#7c3aed', color: '#fff', border: 'none', borderRadius: '10px', padding: '10px 16px', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', cursor: 'pointer' }}>{t.save}</button>
-                </form>
-              ) : ficha ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  {[
-                    { label: t.medicalHistory, valor: ficha.historico_medico },
-                    { label: t.pathologies, valor: ficha.patologias },
-                    { label: t.medication, valor: ficha.medicacao },
-                    { label: t.observations, valor: ficha.observacoes },
-                  ].filter(i => i.valor).map(item => (
-                    <div key={item.label}>
-                      <p style={{ fontSize: '9px', color: '#444', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '4px' }}>{item.label}</p>
-                      <p style={{ fontSize: '13px', color: '#aaa', textTransform: 'uppercase' }}>{item.valor}</p>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p style={{ fontSize: '11px', color: '#333', textTransform: 'uppercase', letterSpacing: '0.1em' }}>{t.noClinicalFile}</p>
-              )}
-            </div>
-          </div>
-        )}
-
-        {tab === 'registos' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-              <GerarReportButton clienteId={cliente.id} nomeCliente={cliente.nome} emailCliente={cliente.email} sessoes={sessoes} />
-              <a href={`/clientes/${id}/nova-sessao`}
-                style={{ background: '#1d4ed8', color: '#fff', borderRadius: '10px', padding: '10px 16px', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', textDecoration: 'none' }}>
-                + {t.newSession}
-              </a>
-            </div>
-            {sessoes.length === 0 ? (
-              <p style={{ fontSize: '11px', color: '#333', textTransform: 'uppercase', letterSpacing: '0.1em' }}>{t.noSessions}</p>
-            ) : sessoes.map(s => (
-              <div key={s.id} style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', display: 'flex', alignItems: 'center' }}>
-                <a href={`/clientes/${id}/sessoes/${s.id}`} style={{ flex: 1, padding: '16px 20px', textDecoration: 'none' }}>
-                  <p style={{ fontSize: '12px', fontWeight: 700, color: '#fff', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                    {new Date(s.data + 'T00:00:00').toLocaleDateString('pt-PT', { weekday: 'long', day: 'numeric', month: 'long' })}
-                  </p>
-                  {s.hora && <p style={{ fontSize: '10px', color: '#444', textTransform: 'uppercase', marginTop: '4px' }}>{s.hora.slice(0, 5)}</p>}
-                  {s.notas && <p style={{ fontSize: '10px', color: '#333', textTransform: 'uppercase', marginTop: '4px' }}>{s.notas}</p>}
+        {/* Lista */}
+        {loading ? (
+          <p className="text-[#333] text-xs uppercase tracking-widest">{t.loading}</p>
+        ) : clientesFiltrados.length === 0 ? (
+          <p className="text-[#333] text-xs uppercase tracking-widest">{pesquisa ? t.noResults : t.noClients}</p>
+        ) : (
+          <div className="flex flex-col gap-2">
+            {clientesFiltrados.map(c => (
+              <div key={c.id} className="relative group flex items-center bg-[#111] border border-[#1a1a1a] rounded-xl hover:border-[#2a2a2a] transition-colors">
+                <a href={`/clientes/${c.id}`} className="flex items-center gap-4 flex-1 min-w-0 px-5 py-4">
+                  <svg width="18" height="18" fill="none" stroke="white" strokeWidth="1.6" viewBox="0 0 24 24" style={{ flexShrink: 0, opacity: 0.5 }}>
+                    <circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+                  </svg>
+                  <p className="text-sm font-bold uppercase tracking-wider truncate text-white">{c.nome}</p>
                 </a>
-                <button onClick={() => apagarSessao(s.id)} style={{ background: 'none', border: 'none', color: '#2a2a2a', fontSize: '20px', cursor: 'pointer', padding: '0 16px' }}>×</button>
+                <button onClick={() => iniciarEdicao(c)}
+                  className="flex items-center justify-center w-9 h-9 rounded-xl mx-1"
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#666' }}
+                  onMouseEnter={e => (e.currentTarget.style.color = '#6366f1')}
+                  onMouseLeave={e => (e.currentTarget.style.color = '#666')}
+                  aria-label={t.edit}>
+                  <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                  </svg>
+                </button>
+                <button onClick={() => apagarCliente(c.id)}
+                  className="flex items-center justify-center w-9 h-9 rounded-xl mx-2"
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#666' }}
+                  onMouseEnter={e => (e.currentTarget.style.color = '#ef4444')}
+                  onMouseLeave={e => (e.currentTarget.style.color = '#666')}
+                  aria-label={t.delete}>
+                  <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/>
+                    <path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
+                  </svg>
+                </button>
               </div>
             ))}
           </div>
         )}
+      </div>
 
-        {tab === 'progresso' && (
-          <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '20px' }}>
-            <p style={{ fontSize: '9px', color: '#3b82f6', textTransform: 'uppercase', letterSpacing: '0.15em', fontWeight: 700, marginBottom: '12px' }}>{t.progress}</p>
-            <p style={{ fontSize: '11px', color: '#333', textTransform: 'uppercase', letterSpacing: '0.1em' }}>{t.progressSoon}</p>
+      {mostrarForm && (
+        <div onClick={cancelarForm}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)', zIndex: 40 }} />
+      )}
+
+      <div style={{
+        position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 50,
+        transform: mostrarForm ? 'translateY(0)' : 'translateY(100%)',
+        transition: 'transform 0.3s cubic-bezier(0.32, 0.72, 0, 1)',
+        background: '#111', borderTop: '1px solid #1e1e1e',
+        borderRadius: '20px 20px 0 0', maxHeight: '90vh', overflowY: 'auto',
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '14px 0 0' }}>
+          <div style={{ width: '36px', height: '4px', borderRadius: '2px', background: '#2a2a2a' }} />
+        </div>
+        <div style={{ padding: '20px 24px 40px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '28px' }}>
+            <div>
+              <p style={{ fontSize: '10px', color: editandoId ? '#a855f7' : '#3b82f6', textTransform: 'uppercase', letterSpacing: '0.15em', fontWeight: 700, marginBottom: '4px' }}>
+                {editandoId ? t.editRecord : t.newRecord}
+              </p>
+              <h2 style={{ fontSize: '22px', fontWeight: 800, color: '#fff', textTransform: 'uppercase', letterSpacing: '-0.02em', margin: 0 }}>
+                {editandoId ? t.editClient : t.addClient}
+              </h2>
+            </div>
+            <button onClick={cancelarForm}
+              style={{ width: '36px', height: '36px', borderRadius: '10px', background: '#1a1a1a', border: '1px solid #222', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#555' }}>
+              <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            </button>
           </div>
-        )}
+
+          <form onSubmit={guardarCliente} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div>
+              <label className={labelClass}>{t.fullName} *</label>
+              <input value={nome} onChange={e => setNome(e.target.value)} required className={inputClass} />
+            </div>
+            <div>
+              <label className={labelClass}>{t.email}</label>
+              <input value={email} onChange={e => setEmail(e.target.value)} type="email" placeholder="email@exemplo.com" className={inputClass} />
+            </div>
+            <div>
+              <label className={labelClass}>{t.phone}</label>
+              <input value={telefone} onChange={e => setTelefone(e.target.value)} className={inputClass} />
+            </div>
+            <div>
+              <label className={labelClass}>{t.birthDate}</label>
+              <input value={dataNasc} onChange={e => setDataNasc(e.target.value)} type="date" className={inputClass} />
+            </div>
+            <div style={{ height: '1px', background: '#1a1a1a', margin: '4px 0' }} />
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button type="submit"
+                style={{ flex: 1, background: editandoId ? '#7c3aed' : '#1d4ed8', color: '#fff', border: 'none', borderRadius: '12px', padding: '14px', fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', cursor: 'pointer' }}
+                onMouseEnter={e => (e.currentTarget.style.background = editandoId ? '#6d28d9' : '#1e40af')}
+                onMouseLeave={e => (e.currentTarget.style.background = editandoId ? '#7c3aed' : '#1d4ed8')}>
+                {editandoId ? t.updateClient : t.saveClient}
+              </button>
+              <button type="button" onClick={cancelarForm}
+                style={{ padding: '14px 20px', background: '#1a1a1a', border: '1px solid #222', borderRadius: '12px', fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#555', cursor: 'pointer' }}
+                onMouseEnter={e => { e.currentTarget.style.color = '#fff'; e.currentTarget.style.borderColor = '#333' }}
+                onMouseLeave={e => { e.currentTarget.style.color = '#555'; e.currentTarget.style.borderColor = '#222' }}>
+                {t.cancel}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </main>
   )
