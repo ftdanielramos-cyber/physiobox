@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useParams } from 'next/navigation'
 import Voltar from '@/components/Voltar'
+import GerarReportButton from '@/components/reports/GerarReportButton'
 
 type Cliente = {
   id: string
@@ -283,7 +284,15 @@ export default function ClientePage() {
         {/* REGISTOS */}
         {tab === 'registos' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '8px' }}>
+
+            {/* Barra de ações — Nova Sessão + Gerar Report */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+              <GerarReportButton
+                clienteId={cliente.id}
+                nomeCliente={cliente.nome}
+                emailCliente={cliente.email}
+                sessoes={sessoes}
+              />
               <a href={`/clientes/${id}/nova-sessao`}
                 style={{ background: '#1d4ed8', color: '#fff', borderRadius: '10px', padding: '10px 16px', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', textDecoration: 'none' }}>
                 + Nova Sessão
