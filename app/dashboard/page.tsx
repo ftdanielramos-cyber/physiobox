@@ -116,9 +116,7 @@ export default function Dashboard() {
             </h1>
           </div>
           <button onClick={logout}
-            style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: '1px solid #1e1e1e', borderRadius: '10px', padding: '8px 12px', cursor: 'pointer', color: '#444', fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', transition: 'all 0.15s', marginTop: '4px' }}
-            onMouseEnter={e => { e.currentTarget.style.borderColor = '#ef4444'; e.currentTarget.style.color = '#ef4444' }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = '#1e1e1e'; e.currentTarget.style.color = '#444' }}>
+            style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', padding: '0', marginTop: '4px' }}>
             <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
               <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
               <polyline points="16 17 21 12 16 7"/>
