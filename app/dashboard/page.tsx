@@ -182,35 +182,20 @@ export default function Dashboard() {
                 <path d="M9 11l3 3L22 4" /><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
               </svg>
             </div>
-            <div style={{ flex: 1 }}>
-              <p style={s.cardTitle}>Nova Avaliação</p>
-              <p style={s.cardSub}>Funcional · Modelos 1, 2 e 3</p>
-            </div>
+            <div style={{ flex: 1 }}><p style={s.cardTitle}>Nova Avaliação</p></div>
             <span style={s.arrow}>›</span>
           </a>
 
-          {/* ─── NOVO: Protocolos de Reabilitação ─── */}
-          <a href="/protocolos" style={{
-            ...s.card,
-            background: 'linear-gradient(135deg, #0f1a2e 0%, #141414 100%)',
-            border: '1px solid rgba(16,185,129,0.25)',
-            position: 'relative',
-            overflow: 'hidden',
-          }}>
-            {/* glow */}
-            <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at 0% 50%, rgba(16,185,129,0.07) 0%, transparent 70%)', pointerEvents: 'none' }} />
-            <div style={{ ...s.iconBox, color: '#10b981', border: '1px solid rgba(16,185,129,0.3)', background: 'rgba(16,185,129,0.08)' }}>
+          <a href="/protocolos" style={s.card}>
+            <div style={s.iconBox}>
               <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
                 <path d="M12 2L2 7l10 5 10-5-10-5z" />
                 <path d="M2 17l10 5 10-5" />
                 <path d="M2 12l10 5 10-5" />
               </svg>
             </div>
-            <div style={{ flex: 1 }}>
-              <p style={{ ...s.cardTitle, color: '#10b981' }}>Protocolos de Reabilitação</p>
-              <p style={{ ...s.cardSub, color: 'rgba(16,185,129,0.6)' }}>Templates · Atribuição a Pacientes</p>
-            </div>
-            <span style={{ ...s.arrow, color: 'rgba(16,185,129,0.4)' }}>›</span>
+            <div style={{ flex: 1 }}><p style={s.cardTitle}>Protocolos de Reabilitação</p></div>
+            <span style={s.arrow}>›</span>
           </a>
 
         </div>
