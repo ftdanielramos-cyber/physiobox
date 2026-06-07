@@ -20,6 +20,11 @@ type Cliente = {
   nome: string
 }
 
+type ClientePopup = {
+  id: string | null
+  nome: string
+}
+
 export default function CalendarioPage() {
   const [mesAtual, setMesAtual] = useState(new Date())
   const [agendamentos, setAgendamentos] = useState<Agendamento[]>([])
@@ -33,8 +38,7 @@ export default function CalendarioPage() {
   const [tipo, setTipo] = useState('')
   const [notas, setNotas] = useState('')
   const [loading, setLoading] = useState(false)
-  // Cliente selecionado para ver agendamentos no popup
-  const [clientePopup, setClientePopup] = useState<{ id: string | null; nome: string } | null>(null)
+  const [clientePopup, setClientePopup] = useState<ClientePopup | null>(null)
   const supabase = createClient()
 
   useEffect(() => { carregarAgendamentos() }, [mesAtual])
@@ -111,19 +115,9 @@ export default function CalendarioPage() {
     return agendamentos.filter(a => a.data === dataStr)
   }
 
-  function diasNoMes() {
-    return new Date(mesAtual.getFullYear(), mesAtual.getMonth() + 1, 0).getDate()
-  }
-
-  function primeiroDiaSemana() {
-    const d = new Date(mesAtual.getFullYear(), mesAtual.getMonth(), 1).getDay()
-    return d === 0 ? 6 : d - 1
-  }
-
-  // Agrupar agendamentos do dia por cliente
-  function clientesNoDia(dia: number): { cliente: { id: string | null | undefined; nome: string }, ags: Agendamento[] }[] {
+  function clientesNoDia(dia: number): { cliente: ClientePopup; ags: Agendamento[] }[] {
     const ags = agendamentosNoDia(dia)
-    const mapa = new Map<string, { cliente: { id: string | null | undefined; nome: string }, ags: Agendamento[] }>()
+    const mapa = new Map<string, { cliente: ClientePopup; ags: Agendamento[] }>()
     ags.forEach(a => {
       const key = a.cliente_id || 'sem-cliente'
       if (!mapa.has(key)) {
@@ -134,6 +128,15 @@ export default function CalendarioPage() {
     return Array.from(mapa.values()).sort((a, b) => a.cliente.nome.localeCompare(b.cliente.nome))
   }
 
+  function diasNoMes() {
+    return new Date(mesAtual.getFullYear(), mesAtual.getMonth() + 1, 0).getDate()
+  }
+
+  function primeiroDiaSemana() {
+    const d = new Date(mesAtual.getFullYear(), mesAtual.getMonth(), 1).getDay()
+    return d === 0 ? 6 : d - 1
+  }
+
   const meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
   const diasSemana = ['S', 'T', 'Q', 'Q', 'S', 'S', 'D']
   const hoje = new Date()
@@ -141,10 +144,9 @@ export default function CalendarioPage() {
     ? new Date(mesAtual.getFullYear(), mesAtual.getMonth(), diaSelected)
         .toLocaleDateString('pt-PT', { weekday: 'long', day: 'numeric', month: 'long' })
     : ''
-
   const clientesDoDia = diaSelected ? clientesNoDia(diaSelected) : []
   const agendamentosDoClientePopup = clientePopup
-    ? agendamentosNoDia(diaSelected!).filter(a => (a.cliente_id || 'sem-cliente') === (clientePopup.id || 'sem-cliente'))
+    ? agendamentosNoDia(diaSelected!).filter(a => (a.cliente_id ?? null) === clientePopup.id)
     : []
 
   const s = {
@@ -163,7 +165,6 @@ export default function CalendarioPage() {
   return (
     <main style={s.page}>
       <div style={{ maxWidth: '600px', margin: '0 auto' }}>
-
         <Voltar />
         <h1 style={s.title}>Calendário</h1>
 
@@ -210,7 +211,6 @@ export default function CalendarioPage() {
               <button style={s.btnGhost} onClick={() => { cancelarForm(); setMostrarForm(true) }}>+ Agendar</button>
             </div>
 
-            {/* FORMULÁRIO CRIAR/EDITAR */}
             {mostrarForm && (
               <form onSubmit={guardarAgendamento} style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '16px', paddingBottom: '16px', borderBottom: '1px solid #1a1a1a' }}>
                 <p style={{ fontSize: '9px', color: editandoId ? '#a855f7' : '#3b82f6', textTransform: 'uppercase', letterSpacing: '0.15em', fontWeight: 700, margin: 0 }}>
@@ -218,7 +218,7 @@ export default function CalendarioPage() {
                 </p>
                 <select value={clienteId} onChange={e => setClienteId(e.target.value)} style={s.input}>
                   <option value="">Sem Cliente Associado</option>
-                  {clientes.map(c => <option key={c.id} value={c.id ?? ''}>{c.nome}</option>)}
+                  {clientes.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
                 </select>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                   <div>
@@ -241,7 +241,6 @@ export default function CalendarioPage() {
               </form>
             )}
 
-            {/* LISTA POR CLIENTE */}
             {clientesDoDia.length === 0 ? (
               <p style={{ fontSize: '11px', color: '#444', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Sem agendamentos.</p>
             ) : (
@@ -249,7 +248,7 @@ export default function CalendarioPage() {
                 {clientesDoDia.map(({ cliente, ags }) => (
                   <button
                     key={cliente.id || 'sem-cliente'}
-                    onClick={() => setClientePopup(clientePopup?.id === cliente.id ? null : { id: cliente.id, nome: cliente.nome })}
+                    onClick={() => setClientePopup(clientePopup?.id === cliente.id ? null : cliente)}
                     style={{
                       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                       background: '#0d0d0d', border: '1px solid #1e1e1e', borderRadius: '12px',
@@ -276,12 +275,10 @@ export default function CalendarioPage() {
         )}
       </div>
 
-      {/* BACKDROP POPUP */}
+      {/* BACKDROP */}
       {clientePopup && (
-        <div
-          onClick={() => setClientePopup(null)}
-          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(6px)', zIndex: 40 }}
-        />
+        <div onClick={() => setClientePopup(null)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(6px)', zIndex: 40 }} />
       )}
 
       {/* POPUP AGENDAMENTOS DO CLIENTE */}
@@ -295,10 +292,8 @@ export default function CalendarioPage() {
         <div style={{ display: 'flex', justifyContent: 'center', padding: '14px 0 0' }}>
           <div style={{ width: '36px', height: '4px', borderRadius: '2px', background: '#2a2a2a' }} />
         </div>
-
         {clientePopup && (
           <div style={{ padding: '20px 24px 40px' }}>
-            {/* Header */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
               <div>
                 <p style={{ fontSize: '10px', color: '#3b82f6', textTransform: 'uppercase', letterSpacing: '0.15em', fontWeight: 700, marginBottom: '4px' }}>
@@ -308,8 +303,7 @@ export default function CalendarioPage() {
                   {clientePopup.nome}
                 </h2>
               </div>
-              <button
-                onClick={() => setClientePopup(null)}
+              <button onClick={() => setClientePopup(null)}
                 style={{ width: '36px', height: '36px', borderRadius: '10px', background: '#1a1a1a', border: '1px solid #222', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#555' }}>
                 <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
                   <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
@@ -317,45 +311,42 @@ export default function CalendarioPage() {
               </button>
             </div>
 
-            {/* Agendamentos do cliente */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {agendamentosDoClientePopup.sort((a, b) => (a.hora_inicio || '').localeCompare(b.hora_inicio || '')).map(a => (
-                <div key={a.id} style={{ background: '#0d0d0d', border: '1px solid #1e1e1e', borderRadius: '14px', padding: '16px' }}>
-                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-                    <div style={{ flex: 1 }}>
-                      {(a.hora_inicio || a.hora_fim) && (
-                        <p style={{ fontSize: '13px', fontWeight: 800, color: '#fff', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>
-                          {a.hora_inicio?.slice(0, 5)}{a.hora_fim ? ` → ${a.hora_fim.slice(0, 5)}` : ''}
-                        </p>
-                      )}
-                      {a.tipo && <p style={{ fontSize: '10px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>{a.tipo}</p>}
-                      {a.notas && <p style={{ fontSize: '10px', color: '#444', textTransform: 'uppercase' }}>{a.notas}</p>}
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginLeft: '12px' }}>
-                      <button
-                        onClick={() => iniciarEdicao(a)}
-                        style={{ background: 'none', border: 'none', color: '#555', fontSize: '15px', cursor: 'pointer', padding: '4px 6px', borderRadius: '8px' }}
-                        onMouseEnter={e => (e.currentTarget.style.color = '#6366f1')}
-                        onMouseLeave={e => (e.currentTarget.style.color = '#555')}
-                        aria-label="Editar">✎</button>
-                      <button
-                        onClick={() => apagarAgendamento(a.id)}
-                        style={{ background: 'none', border: 'none', color: '#333', fontSize: '20px', cursor: 'pointer', padding: '4px 6px', borderRadius: '8px' }}
-                        onMouseEnter={e => (e.currentTarget.style.color = '#ef4444')}
-                        onMouseLeave={e => (e.currentTarget.style.color = '#333')}
-                        aria-label="Apagar">×</button>
+              {agendamentosDoClientePopup
+                .sort((a, b) => (a.hora_inicio || '').localeCompare(b.hora_inicio || ''))
+                .map(a => (
+                  <div key={a.id} style={{ background: '#0d0d0d', border: '1px solid #1e1e1e', borderRadius: '14px', padding: '16px' }}>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+                      <div style={{ flex: 1 }}>
+                        {(a.hora_inicio || a.hora_fim) && (
+                          <p style={{ fontSize: '13px', fontWeight: 800, color: '#fff', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>
+                            {a.hora_inicio?.slice(0, 5)}{a.hora_fim ? ` → ${a.hora_fim.slice(0, 5)}` : ''}
+                          </p>
+                        )}
+                        {a.tipo && <p style={{ fontSize: '10px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>{a.tipo}</p>}
+                        {a.notas && <p style={{ fontSize: '10px', color: '#444', textTransform: 'uppercase' }}>{a.notas}</p>}
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginLeft: '12px' }}>
+                        <button onClick={() => iniciarEdicao(a)}
+                          style={{ background: 'none', border: 'none', color: '#555', fontSize: '15px', cursor: 'pointer', padding: '4px 6px', borderRadius: '8px' }}
+                          onMouseEnter={e => (e.currentTarget.style.color = '#6366f1')}
+                          onMouseLeave={e => (e.currentTarget.style.color = '#555')}
+                          aria-label="Editar">✎</button>
+                        <button onClick={() => apagarAgendamento(a.id)}
+                          style={{ background: 'none', border: 'none', color: '#333', fontSize: '20px', cursor: 'pointer', padding: '4px 6px', borderRadius: '8px' }}
+                          onMouseEnter={e => (e.currentTarget.style.color = '#ef4444')}
+                          onMouseLeave={e => (e.currentTarget.style.color = '#333')}
+                          aria-label="Apagar">×</button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))}
             </div>
 
-            {/* Link para perfil do cliente */}
             {clientePopup.id && (
               <a href={`/clientes/${clientePopup.id}`}
                 style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginTop: '20px', padding: '12px', background: '#1a1a1a', border: '1px solid #222', borderRadius: '12px', textDecoration: 'none', color: '#555', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-                Ver Perfil do Cliente
-                <span style={{ fontSize: '16px' }}>›</span>
+                Ver Perfil do Cliente <span style={{ fontSize: '16px' }}>›</span>
               </a>
             )}
           </div>
