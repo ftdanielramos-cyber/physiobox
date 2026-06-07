@@ -1,6 +1,27 @@
-import Link from 'next/link';
+'use client'
+
+import Link from 'next/link'
+import { useState } from 'react'
+import { createClient } from '@/lib/supabase'
 
 export default function Home() {
+  const [loadingDemo, setLoadingDemo] = useState(false)
+  const supabase = createClient()
+
+  async function entrarDemo() {
+    setLoadingDemo(true)
+    const { error } = await supabase.auth.signInWithPassword({
+      email: 'demo@physiobox.app',
+      password: 'demo1234',
+    })
+    if (error) {
+      alert('Erro ao entrar em modo demo.')
+      setLoadingDemo(false)
+      return
+    }
+    window.location.href = '/dashboard'
+  }
+
   return (
     <>
       <style>{`
@@ -253,6 +274,23 @@ export default function Home() {
         .btn-arrow {
           font-size: 16px;
           transition: transform 0.2s;
+        }
+
+        .btn-demo {
+          background: transparent !important;
+          border: 1px solid rgba(59,130,246,0.4) !important;
+          color: #3b82f6 !important;
+        }
+
+        .btn-demo:hover {
+          background: rgba(59,130,246,0.1) !important;
+          box-shadow: 0 8px 30px rgba(59,130,246,0.2) !important;
+          border-color: rgba(59,130,246,0.8) !important;
+        }
+
+        .btn-demo:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
         }
 
         .btn:hover .btn-arrow {
