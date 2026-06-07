@@ -5,6 +5,11 @@ import { createClient } from '@/lib/supabase'
 
 function useCountUp(target: number | null, duration = 1000) {
   const [value, setValue] = useState(0)
+  async function logout() {
+    await supabase.auth.signOut()
+    window.location.href = '/'
+  }
+
   useEffect(() => {
     if (target === null) return
     if (target === 0) { setValue(0); return }
@@ -26,6 +31,11 @@ export default function Dashboard() {
   const [sessoesMes, setSessoesMes] = useState<number | null>(null)
   const [proximos, setProximos] = useState<any[]>([])
   const supabase = createClient()
+
+  async function logout() {
+    await supabase.auth.signOut()
+    window.location.href = '/'
+  }
 
   useEffect(() => {
     async function carregarStats() {
@@ -103,11 +113,24 @@ export default function Dashboard() {
     <main style={s.page}>
       <div style={s.wrap}>
 
-        <div style={{ marginBottom: '28px', borderBottom: '1px solid #1a1a1a', paddingBottom: '24px' }}>
-          <p style={{ color: '#3b82f6', fontSize: '10px', letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: '4px' }}>{hoje}</p>
-          <h1 style={{ fontSize: '30px', fontWeight: 800, color: '#fff', textTransform: 'uppercase', letterSpacing: '-0.01em', lineHeight: 1 }}>
-            Olá, Physiobox
-          </h1>
+        <div style={{ marginBottom: '28px', borderBottom: '1px solid #1a1a1a', paddingBottom: '24px', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+          <div>
+            <p style={{ color: '#3b82f6', fontSize: '10px', letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: '4px' }}>{hoje}</p>
+            <h1 style={{ fontSize: '30px', fontWeight: 800, color: '#fff', textTransform: 'uppercase', letterSpacing: '-0.01em', lineHeight: 1 }}>
+              Olá, Physiobox
+            </h1>
+          </div>
+          <button onClick={logout}
+            style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: '1px solid #1e1e1e', borderRadius: '10px', padding: '8px 12px', cursor: 'pointer', color: '#444', fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', transition: 'all 0.15s', marginTop: '4px' }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = '#ef4444'; e.currentTarget.style.color = '#ef4444' }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = '#1e1e1e'; e.currentTarget.style.color = '#444' }}>
+            <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+              <polyline points="16 17 21 12 16 7"/>
+              <line x1="21" y1="12" x2="9" y2="12"/>
+            </svg>
+            Sair
+          </button>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', marginBottom: '32px' }}>
