@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase'
 
 export default function Home() {
   const [loadingDemo, setLoadingDemo] = useState(false)
+  const [loadingLogin, setLoadingLogin] = useState(false)
   const supabase = createClient()
 
   async function entrarDemo() {
@@ -40,7 +41,6 @@ export default function Home() {
           font-family: 'Space Mono', monospace;
         }
 
-        /* Grid de fundo */
         .grid-bg {
           position: absolute;
           inset: 0;
@@ -56,7 +56,6 @@ export default function Home() {
           100% { transform: translateY(60px); }
         }
 
-        /* Glow central */
         .glow {
           position: absolute;
           width: 600px;
@@ -75,7 +74,6 @@ export default function Home() {
           50% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
         }
 
-        /* Linhas de scan */
         .scanline {
           position: absolute;
           left: 0; right: 0;
@@ -92,48 +90,6 @@ export default function Home() {
           100% { top: 100%; opacity: 0; }
         }
 
-        /* Cantos decorativos */
-        .corner {
-          position: absolute;
-          width: 24px;
-          height: 24px;
-          border-color: rgba(59,130,246,0.4);
-          border-style: solid;
-        }
-        .corner-tl { top: 24px; left: 24px; border-width: 2px 0 0 2px; }
-        .corner-tr { top: 24px; right: 24px; border-width: 2px 2px 0 0; }
-        .corner-bl { bottom: 24px; left: 24px; border-width: 0 0 2px 2px; }
-        .corner-br { bottom: 24px; right: 24px; border-width: 0 2px 2px 0; }
-
-        /* Status bar */
-        .status-bar {
-          position: absolute;
-          top: 24px;
-          left: 50%;
-          transform: translateX(-50%);
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          font-size: 9px;
-          color: rgba(59,130,246,0.5);
-          letter-spacing: 0.2em;
-          text-transform: uppercase;
-        }
-
-        .status-dot {
-          width: 6px;
-          height: 6px;
-          border-radius: 50%;
-          background: #3b82f6;
-          animation: blink 2s ease-in-out infinite;
-        }
-
-        @keyframes blink {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.2; }
-        }
-
-        /* Conteúdo principal */
         .content {
           position: relative;
           z-index: 10;
@@ -147,96 +103,29 @@ export default function Home() {
           to { opacity: 1; transform: translateY(0); }
         }
 
-        .tag {
-          display: inline-flex;
-          align-items: center;
-          gap: 8px;
-          font-size: 9px;
-          color: #3b82f6;
-          letter-spacing: 0.3em;
-          text-transform: uppercase;
-          margin-bottom: 20px;
-          border: 1px solid rgba(59,130,246,0.2);
-          padding: 6px 14px;
-          border-radius: 2px;
-          background: rgba(59,130,246,0.05);
-          animation: fadeUp 1s ease 0.1s both;
-        }
-
-        .tag-line {
-          width: 20px;
-          height: 1px;
-          background: #3b82f6;
-        }
-
         .title {
           font-family: 'Bebas Neue', sans-serif;
-          font-size: clamp(80px, 18vw, 140px);
+          font-size: clamp(90px, 20vw, 160px);
           color: #fff;
           line-height: 0.9;
           letter-spacing: -2px;
-          margin-bottom: 4px;
+          margin-bottom: 56px;
           animation: fadeUp 1s ease 0.2s both;
-          position: relative;
         }
 
-        .title-accent {
-          color: transparent;
-          -webkit-text-stroke: 1px rgba(59,130,246,0.6);
-        }
-
-        .subtitle {
-          font-size: 10px;
-          color: #3b3b4f;
-          letter-spacing: 0.4em;
-          text-transform: uppercase;
-          margin-bottom: 48px;
-          animation: fadeUp 1s ease 0.3s both;
-        }
-
-        /* Métricas decorativas */
-        .metrics {
-          display: flex;
-          justify-content: center;
-          gap: 32px;
-          margin-bottom: 48px;
-          animation: fadeUp 1s ease 0.4s both;
-        }
-
-        .metric {
-          text-align: center;
-        }
-
-        .metric-val {
-          font-size: 22px;
-          font-weight: 700;
-          color: #fff;
-          line-height: 1;
-        }
-
-        .metric-lbl {
-          font-size: 8px;
-          color: #333;
-          letter-spacing: 0.2em;
-          text-transform: uppercase;
-          margin-top: 4px;
-        }
-
-        .metric-sep {
-          width: 1px;
-          background: #1a1a1a;
-          align-self: stretch;
-        }
-
-        /* Botão */
         .btn-wrap {
-          animation: fadeUp 1s ease 0.5s both;
+          animation: fadeUp 1s ease 0.4s both;
+          display: flex;
+          gap: 12px;
+          justify-content: center;
+          flex-wrap: wrap;
         }
 
         .btn {
           display: inline-flex;
           align-items: center;
-          gap: 12px;
+          justify-content: center;
+          gap: 10px;
           background: #3b82f6;
           color: #fff;
           text-decoration: none;
@@ -247,9 +136,12 @@ export default function Home() {
           letter-spacing: 0.2em;
           text-transform: uppercase;
           border-radius: 2px;
+          border: none;
           position: relative;
           overflow: hidden;
           transition: all 0.2s;
+          cursor: pointer;
+          min-width: 140px;
         }
 
         .btn::before {
@@ -261,43 +153,44 @@ export default function Home() {
           transition: transform 0.4s;
         }
 
-        .btn:hover::before {
-          transform: translateX(100%);
-        }
-
+        .btn:hover::before { transform: translateX(100%); }
         .btn:hover {
           background: #2563eb;
           transform: translateY(-1px);
           box-shadow: 0 8px 30px rgba(59,130,246,0.4);
         }
 
-        .btn-arrow {
-          font-size: 16px;
-          transition: transform 0.2s;
-        }
-
         .btn-demo {
-          background: transparent !important;
-          border: 1px solid rgba(59,130,246,0.4) !important;
-          color: #3b82f6 !important;
+          background: transparent;
+          border: 1px solid rgba(59,130,246,0.4);
+          color: #3b82f6;
         }
 
         .btn-demo:hover {
           background: rgba(59,130,246,0.1) !important;
           box-shadow: 0 8px 30px rgba(59,130,246,0.2) !important;
           border-color: rgba(59,130,246,0.8) !important;
+          transform: translateY(-1px);
         }
 
-        .btn-demo:disabled {
+        .btn-demo:disabled, .btn:disabled {
           opacity: 0.5;
           cursor: not-allowed;
+          transform: none !important;
         }
 
-        .btn:hover .btn-arrow {
-          transform: translateX(4px);
+        /* Ampulheta animada */
+        .hourglass {
+          display: inline-block;
+          animation: flipHourglass 1.4s ease-in-out infinite;
         }
 
-        /* Versão */
+        @keyframes flipHourglass {
+          0%, 45%   { transform: rotate(0deg); }
+          50%, 95%  { transform: rotate(180deg); }
+          100%      { transform: rotate(180deg); }
+        }
+
         .version {
           position: absolute;
           bottom: 24px;
@@ -310,7 +203,6 @@ export default function Home() {
           white-space: nowrap;
         }
 
-        /* Barras laterais */
         .side-bar {
           position: absolute;
           top: 50%;
@@ -342,15 +234,6 @@ export default function Home() {
         <div className="glow" />
         <div className="scanline" />
 
-        {/* Cantos */}
-        <div className="corner corner-tl" />
-        <div className="corner corner-tr" />
-        <div className="corner corner-bl" />
-        <div className="corner corner-br" />
-
-
-
-        {/* Barras laterais */}
         <div className="side-bar side-bar-left">
           {[0,1,2,3,4].map(i => (
             <div key={i} className={`side-bar-item ${i === 2 ? 'active' : ''}`} />
@@ -362,41 +245,25 @@ export default function Home() {
           ))}
         </div>
 
-        {/* Conteúdo */}
         <div className="content">
-          <div className="tag">
-            <div className="tag-line" />
-            Performance & Reabilitação
-            <div className="tag-line" />
-          </div>
-
-          <h1 className="title">
-            Physiobox
-          </h1>
-
-          <p className="subtitle">Reabilitação & Performance</p>
-
-          <div className="metrics">
-            <div className="metric">
-              <div className="metric-val">01</div>
-              <div className="metric-lbl">Plataforma</div>
-            </div>
-            <div className="metric-sep" />
-            <div className="metric">
-              <div className="metric-val">∞</div>
-              <div className="metric-lbl">Clientes</div>
-            </div>
-            <div className="metric-sep" />
-            <div className="metric">
-              <div className="metric-val">24h</div>
-              <div className="metric-lbl">Acesso</div>
-            </div>
-          </div>
+          <h1 className="title">Physiobox</h1>
 
           <div className="btn-wrap">
-            <Link href="/login" className="btn">
-Entrar
+            <Link
+              href="/login"
+              className="btn"
+              onClick={() => setLoadingLogin(true)}
+            >
+              {loadingLogin
+                ? <span className="hourglass">⏳</span>
+                : 'Entrar'}
             </Link>
+
+            <button onClick={entrarDemo} disabled={loadingDemo} className="btn btn-demo">
+              {loadingDemo
+                ? <span className="hourglass">⏳</span>
+                : 'Ver Demo'}
+            </button>
           </div>
         </div>
 
