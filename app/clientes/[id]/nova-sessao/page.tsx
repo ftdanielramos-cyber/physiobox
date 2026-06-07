@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import Voltar from '@/components/Voltar'
 
 type Questionario = {
@@ -24,12 +24,11 @@ const CORES  = ['', '#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6']
 
 export default function NovaSessaoPage() {
   const { id } = useParams()
+  const router = useRouter()
   const [data, setData]   = useState('')
   const [hora, setHora]   = useState('')
   const [notas, setNotas] = useState('')
   const [loading, setLoading] = useState(false)
-
-  // Questionário
   const [mostrarQ, setMostrarQ] = useState(false)
   const [q, setQ] = useState<Questionario>({ energia: 3, sono: 3, alimentacao: 3, predisposicao: 3 })
 
@@ -37,25 +36,34 @@ export default function NovaSessaoPage() {
 
   function abrirQuestionario(e: React.FormEvent) {
     e.preventDefault()
+    e.stopPropagation()
     setMostrarQ(true)
   }
 
-  async function criarSessao() {
+  async function criarSessao(e: React.MouseEvent) {
+    e.preventDefault()
+    e.stopPropagation()
+    if (loading) return
     setLoading(true)
-    const { data: { user } } = await supabase.auth.getUser()
-    const { data: sessao } = await supabase.from('sessoes').insert({
-      cliente_id: id,
-      fisio_id: user?.id,
-      data,
-      hora: hora || null,
-      notas: notas || null,
-      energia: q.energia,
-      sono: q.sono,
-      alimentacao: q.alimentacao,
-      predisposicao: q.predisposicao,
-    }).select().single()
-    if (sessao) window.location.href = `/clientes/${id}/sessoes/${sessao.id}`
-    setLoading(false)
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      const { data: sessao, error } = await supabase.from('sessoes').insert({
+        cliente_id: id,
+        fisio_id: user?.id,
+        data,
+        hora: hora || null,
+        notas: notas || null,
+        energia: q.energia,
+        sono: q.sono,
+        alimentacao: q.alimentacao,
+        predisposicao: q.predisposicao,
+      }).select().single()
+      if (error) { alert('Erro: ' + error.message); setLoading(false); return }
+      if (sessao) router.push(`/clientes/${id}/sessoes/${sessao.id}`)
+    } catch (err) {
+      console.error(err)
+      setLoading(false)
+    }
   }
 
   function definirData(offset: number) {
@@ -64,7 +72,7 @@ export default function NovaSessaoPage() {
     setData(d.toISOString().split('T')[0])
   }
 
-  const hoje  = new Date().toISOString().split('T')[0]
+  const hoje   = new Date().toISOString().split('T')[0]
   const amanha = new Date(Date.now() + 86400000).toISOString().split('T')[0]
 
   const s = {
@@ -98,7 +106,6 @@ export default function NovaSessaoPage() {
         <h1 style={s.title}>Nova Sessão</h1>
 
         <form onSubmit={abrirQuestionario}>
-
           {/* DATA */}
           <div style={s.card}>
             <p style={s.label}>Data</p>
@@ -136,19 +143,17 @@ export default function NovaSessaoPage() {
               letterSpacing: '0.2em', cursor: data ? 'pointer' : 'not-allowed',
               marginTop: '4px', transition: 'all 0.15s',
             }}>
-            {loading ? 'A criar...' : 'Criar Sessão'}
+            Criar Sessão
           </button>
         </form>
       </div>
 
       {/* BACKDROP */}
       {mostrarQ && (
-        <div
-          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(6px)', zIndex: 40 }}
-        />
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(6px)', zIndex: 40 }} />
       )}
 
-      {/* POPUP QUESTIONÁRIO */}
+      {/* POPUP QUESTIONÁRIO — fora do <form> */}
       <div style={{
         position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 50,
         transform: mostrarQ ? 'translateY(0)' : 'translateY(100%)',
@@ -156,13 +161,11 @@ export default function NovaSessaoPage() {
         background: '#111', borderTop: '1px solid #1e1e1e',
         borderRadius: '24px 24px 0 0', maxHeight: '90vh', overflowY: 'auto',
       }}>
-        {/* Handle */}
         <div style={{ display: 'flex', justifyContent: 'center', padding: '14px 0 0' }}>
           <div style={{ width: '36px', height: '4px', borderRadius: '2px', background: '#2a2a2a' }} />
         </div>
 
         <div style={{ padding: '20px 24px 40px' }}>
-          {/* Header */}
           <div style={{ marginBottom: '28px' }}>
             <p style={{ fontSize: '10px', color: '#3b82f6', textTransform: 'uppercase', letterSpacing: '0.15em', fontWeight: 700, marginBottom: '4px' }}>
               Avaliação Inicial
@@ -172,7 +175,6 @@ export default function NovaSessaoPage() {
             </h2>
           </div>
 
-          {/* Sliders */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', marginBottom: '32px' }}>
             {PERGUNTAS.map(({ key, label, emoji }) => {
               const val = q[key]
@@ -188,8 +190,6 @@ export default function NovaSessaoPage() {
                       {LABELS[val]}
                     </span>
                   </div>
-
-                  {/* Botões 1–5 */}
                   <div style={{ display: 'flex', gap: '8px' }}>
                     {[1, 2, 3, 4, 5].map(n => (
                       <button
@@ -213,16 +213,16 @@ export default function NovaSessaoPage() {
             })}
           </div>
 
-          {/* Botão confirmar */}
+          {/* Botão FORA de qualquer form */}
           <button
             type="button"
             onClick={criarSessao}
             disabled={loading}
             style={{
-              width: '100%', background: '#1d4ed8', color: '#fff',
+              width: '100%', background: loading ? '#1a3a8f' : '#1d4ed8', color: '#fff',
               border: 'none', borderRadius: '14px', padding: '16px',
               fontSize: '12px', fontWeight: 800, textTransform: 'uppercase',
-              letterSpacing: '0.2em', cursor: 'pointer',
+              letterSpacing: '0.2em', cursor: loading ? 'not-allowed' : 'pointer',
             }}>
             {loading ? 'A criar...' : 'Confirmar e Criar Sessão'}
           </button>
