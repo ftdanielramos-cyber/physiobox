@@ -27,11 +27,21 @@ export default function ClientePage() {
   const [ficha, setFicha] = useState<Ficha | null>(null)
   const [sessoes, setSessoes] = useState<any[]>([])
   const [tab, setTab] = useState('visao')
+
+  // Estado edição contacto
+  const [editandoContacto, setEditandoContacto] = useState(false)
+  const [cNome, setCNome] = useState('')
+  const [cEmail, setCEmail] = useState('')
+  const [cTelefone, setCTelefone] = useState('')
+  const [cDataNasc, setCDataNasc] = useState('')
+
+  // Estado edição ficha clínica
   const [editandoFicha, setEditandoFicha] = useState(false)
   const [historico, setHistorico] = useState('')
   const [patologias, setPatologias] = useState('')
   const [medicacao, setMedicacao] = useState('')
   const [observacoes, setObservacoes] = useState('')
+
   const supabase = createClient()
 
   useEffect(() => { carregarDados() }, [id])
@@ -39,6 +49,12 @@ export default function ClientePage() {
   async function carregarDados() {
     const { data: c } = await supabase.from('clientes').select('*').eq('id', id).single()
     setCliente(c)
+    if (c) {
+      setCNome(c.nome || '')
+      setCEmail(c.email || '')
+      setCTelefone(c.telefone || '')
+      setCDataNasc(c.data_nasc || '')
+    }
     const { data: f } = await supabase.from('fichas').select('*').eq('cliente_id', id).single()
     if (f) {
       setFicha(f)
@@ -49,6 +65,19 @@ export default function ClientePage() {
     }
     const { data: s } = await supabase.from('sessoes').select('*').eq('cliente_id', id).order('data', { ascending: false })
     setSessoes(s || [])
+  }
+
+  async function guardarContacto(e: React.FormEvent) {
+    e.preventDefault()
+    const { error } = await supabase.from('clientes').update({
+      nome: cNome,
+      email: cEmail || null,
+      telefone: cTelefone || null,
+      data_nasc: cDataNasc || null,
+    }).eq('id', id as string)
+    if (error) { alert('Erro ao atualizar: ' + error.message); return }
+    setEditandoContacto(false)
+    carregarDados()
   }
 
   async function guardarFicha(e: React.FormEvent) {
@@ -77,6 +106,7 @@ export default function ClientePage() {
   ]
 
   const inputClass = "w-full bg-[#0d0d0d] border border-[#1e1e1e] rounded-lg px-4 py-3 text-sm text-white uppercase tracking-wider placeholder:text-[#333] focus:outline-none focus:border-[#3b82f6] resize-none"
+  const labelClass = "block text-[9px] font-semibold text-[#444] uppercase tracking-[0.12em] mb-1.5"
 
   if (!cliente) return (
     <main style={{ minHeight: '100vh', background: '#0a0a0a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -145,38 +175,87 @@ export default function ClientePage() {
         {/* PERFIL */}
         {tab === 'perfil' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+
+            {/* CONTACTO */}
             <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '20px' }}>
-              <p style={{ fontSize: '9px', color: '#3b82f6', textTransform: 'uppercase', letterSpacing: '0.15em', fontWeight: 700, marginBottom: '12px' }}>Contacto</p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                {[
-                  { label: 'Email', valor: cliente.email },
-                  { label: 'Telefone', valor: cliente.telefone },
-                  { label: 'Data Nascimento', valor: cliente.data_nasc ? new Date(cliente.data_nasc + 'T00:00:00').toLocaleDateString('pt-PT') : null },
-                ].map(item => (
-                  <div key={item.label}>
-                    <p style={{ fontSize: '9px', color: '#444', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '4px' }}>{item.label}</p>
-                    <p style={{ fontSize: '13px', color: '#fff', fontWeight: 700, textTransform: 'uppercase' }}>{item.valor || '—'}</p>
-                  </div>
-                ))}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                <p style={{ fontSize: '9px', color: '#3b82f6', textTransform: 'uppercase', letterSpacing: '0.15em', fontWeight: 700 }}>Contacto</p>
+                <button onClick={() => setEditandoContacto(!editandoContacto)}
+                  style={{ fontSize: '9px', color: editandoContacto ? '#ef4444' : '#555', textTransform: 'uppercase', letterSpacing: '0.1em', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 700 }}>
+                  {editandoContacto ? 'Cancelar' : 'Editar'}
+                </button>
               </div>
+
+              {editandoContacto ? (
+                <form onSubmit={guardarContacto} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <div>
+                    <label className={labelClass}>Nome Completo *</label>
+                    <input value={cNome} onChange={e => setCNome(e.target.value)} required placeholder="Nome" className={inputClass} />
+                  </div>
+                  <div>
+                    <label className={labelClass}>Email</label>
+                    <input value={cEmail} onChange={e => setCEmail(e.target.value)} type="email" placeholder="email@exemplo.com" className={inputClass} />
+                  </div>
+                  <div>
+                    <label className={labelClass}>Telefone</label>
+                    <input value={cTelefone} onChange={e => setCTelefone(e.target.value)} placeholder="+351 900 000 000" className={inputClass} />
+                  </div>
+                  <div>
+                    <label className={labelClass}>Data de Nascimento</label>
+                    <input value={cDataNasc} onChange={e => setCDataNasc(e.target.value)} type="date" className={inputClass} />
+                  </div>
+                  <button type="submit"
+                    style={{ background: '#7c3aed', color: '#fff', border: 'none', borderRadius: '10px', padding: '10px 16px', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', cursor: 'pointer', marginTop: '4px' }}>
+                    Guardar Alterações
+                  </button>
+                </form>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {[
+                    { label: 'Nome', valor: cliente.nome },
+                    { label: 'Email', valor: cliente.email },
+                    { label: 'Telefone', valor: cliente.telefone },
+                    { label: 'Data Nascimento', valor: cliente.data_nasc ? new Date(cliente.data_nasc + 'T00:00:00').toLocaleDateString('pt-PT') : null },
+                  ].map(item => (
+                    <div key={item.label}>
+                      <p style={{ fontSize: '9px', color: '#444', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '4px' }}>{item.label}</p>
+                      <p style={{ fontSize: '13px', color: item.valor ? '#fff' : '#333', fontWeight: 700, textTransform: 'uppercase' }}>{item.valor || '—'}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
+            {/* FICHA CLÍNICA */}
             <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '20px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                 <p style={{ fontSize: '9px', color: '#3b82f6', textTransform: 'uppercase', letterSpacing: '0.15em', fontWeight: 700 }}>Ficha Clínica</p>
                 <button onClick={() => setEditandoFicha(!editandoFicha)}
-                  style={{ fontSize: '9px', color: '#444', textTransform: 'uppercase', letterSpacing: '0.1em', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 700 }}>
+                  style={{ fontSize: '9px', color: editandoFicha ? '#ef4444' : '#555', textTransform: 'uppercase', letterSpacing: '0.1em', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 700 }}>
                   {editandoFicha ? 'Cancelar' : ficha ? 'Editar' : '+ Adicionar'}
                 </button>
               </div>
 
               {editandoFicha ? (
                 <form onSubmit={guardarFicha} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  <textarea value={historico} onChange={e => setHistorico(e.target.value)} placeholder="Histórico Médico" rows={3} className={inputClass} />
-                  <textarea value={patologias} onChange={e => setPatologias(e.target.value)} placeholder="Patologias" rows={2} className={inputClass} />
-                  <textarea value={medicacao} onChange={e => setMedicacao(e.target.value)} placeholder="Medicação" rows={2} className={inputClass} />
-                  <textarea value={observacoes} onChange={e => setObservacoes(e.target.value)} placeholder="Observações" rows={3} className={inputClass} />
-                  <button type="submit" style={{ background: '#1d4ed8', color: '#fff', border: 'none', borderRadius: '10px', padding: '10px 16px', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', cursor: 'pointer' }}>
+                  <div>
+                    <label className={labelClass}>Histórico Médico</label>
+                    <textarea value={historico} onChange={e => setHistorico(e.target.value)} placeholder="Histórico Médico" rows={3} className={inputClass} />
+                  </div>
+                  <div>
+                    <label className={labelClass}>Patologias</label>
+                    <textarea value={patologias} onChange={e => setPatologias(e.target.value)} placeholder="Patologias" rows={2} className={inputClass} />
+                  </div>
+                  <div>
+                    <label className={labelClass}>Medicação</label>
+                    <textarea value={medicacao} onChange={e => setMedicacao(e.target.value)} placeholder="Medicação" rows={2} className={inputClass} />
+                  </div>
+                  <div>
+                    <label className={labelClass}>Observações</label>
+                    <textarea value={observacoes} onChange={e => setObservacoes(e.target.value)} placeholder="Observações" rows={3} className={inputClass} />
+                  </div>
+                  <button type="submit"
+                    style={{ background: '#7c3aed', color: '#fff', border: 'none', borderRadius: '10px', padding: '10px 16px', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', cursor: 'pointer', marginTop: '4px' }}>
                     Guardar
                   </button>
                 </form>

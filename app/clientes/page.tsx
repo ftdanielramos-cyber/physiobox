@@ -160,9 +160,6 @@ export default function ClientesPage() {
                   </svg>
                   <div className="min-w-0">
                     <p className="text-sm font-bold uppercase tracking-wider truncate text-white">{c.nome}</p>
-                    {(c.email || c.telefone) && (
-                      <p className="text-xs text-[#444] truncate mt-0.5">{c.email || c.telefone}</p>
-                    )}
                   </div>
                 </a>
 
