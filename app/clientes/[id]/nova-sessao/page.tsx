@@ -6,19 +6,14 @@ import { useParams, useRouter } from 'next/navigation'
 import { useTranslation } from '@/lib/useTranslation'
 import Voltar from '@/components/Voltar'
 
-type Questionario = {
-  energia: number
-  sono: number
-  alimentacao: number
-  predisposicao: number
-}
+type Questionario = { energia: number; sono: number; alimentacao: number; predisposicao: number }
 
 const CORES = ['', '#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6']
 
 export default function NovaSessaoPage() {
   const { t } = useTranslation()
   const params = useParams()
-const id = Array.isArray(params.id) ? params.id[0] : params.id as string
+  const id = Array.isArray(params.id) ? params.id[0] : params.id as string
   const router = useRouter()
   const [data, setData] = useState('')
   const [hora, setHora] = useState('')
@@ -26,25 +21,21 @@ const id = Array.isArray(params.id) ? params.id[0] : params.id as string
   const [loading, setLoading] = useState(false)
   const [mostrarQ, setMostrarQ] = useState(false)
   const [q, setQ] = useState<Questionario>({ energia: 3, sono: 3, alimentacao: 3, predisposicao: 3 })
-
   const supabase = createClient()
 
   const PERGUNTAS: { key: keyof Questionario; label: string; emoji: string }[] = [
-    { key: 'energia',       label: t.energy,    emoji: '⚡' },
-    { key: 'sono',          label: t.sleep,     emoji: '🌙' },
-    { key: 'alimentacao',   label: t.nutrition, emoji: '🥗' },
+    { key: 'energia', label: t.energy, emoji: '⚡' },
+    { key: 'sono', label: t.sleep, emoji: '🌙' },
+    { key: 'alimentacao', label: t.nutrition, emoji: '🥗' },
     { key: 'predisposicao', label: t.readiness, emoji: '💪' },
   ]
-
   const LABELS = ['', t.veryBad, t.bad, t.regular, t.good, t.veryGood]
 
-  function abrirQuestionario(e: React.FormEvent) {
-    e.preventDefault(); e.stopPropagation(); setMostrarQ(true)
-  }
+  function abrirQuestionario(e: React.FormEvent) { e.preventDefault(); e.stopPropagation(); setMostrarQ(true) }
 
   async function criarSessao(e: React.MouseEvent) {
     e.preventDefault(); e.stopPropagation()
-    if (loading) return
+    if (loading || !id) return
     setLoading(true)
     try {
       const { data: { user } } = await supabase.auth.getUser()
@@ -55,15 +46,11 @@ const id = Array.isArray(params.id) ? params.id[0] : params.id as string
       }).select().single()
       if (error) { alert(t.error + ': ' + error.message); setLoading(false); return }
       router.push(`/clientes/${id}/sessoes/${sessao.id}`)
-    } catch (err) {
-      console.error(err); setLoading(false)
-    }
+    } catch (err) { console.error(err); setLoading(false) }
   }
 
   function definirData(offset: number) {
-    const d = new Date()
-    d.setDate(d.getDate() + offset)
-    setData(d.toISOString().split('T')[0])
+    const d = new Date(); d.setDate(d.getDate() + offset); setData(d.toISOString().split('T')[0])
   }
 
   const hoje = new Date().toISOString().split('T')[0]
@@ -85,10 +72,7 @@ const id = Array.isArray(params.id) ? params.id[0] : params.id as string
     <main style={s.page}>
       <div style={s.wrap}>
         <Voltar />
-        <h1 style={{ fontSize: '32px', fontWeight: 800, color: '#fff', textTransform: 'uppercase', letterSpacing: '-0.01em', marginBottom: '28px' }}>
-          {t.newSession}
-        </h1>
-
+        <h1 style={{ fontSize: '32px', fontWeight: 800, color: '#fff', textTransform: 'uppercase', letterSpacing: '-0.01em', marginBottom: '28px' }}>{t.newSession}</h1>
         <form onSubmit={abrirQuestionario}>
           <div style={s.card}>
             <p style={s.label}>{t.date}</p>
@@ -98,24 +82,17 @@ const id = Array.isArray(params.id) ? params.id[0] : params.id as string
             </div>
             <input type="date" value={data} onChange={e => setData(e.target.value)} required style={s.input} />
           </div>
-
           <div style={s.card}>
             <p style={s.label}>{t.time}</p>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px', marginBottom: '12px' }}>
-              {horasRapidas.map(h => (
-                <button key={h} type="button" onClick={() => setHora(h)} style={s.horaChip(hora === h)}>{h}</button>
-              ))}
+              {horasRapidas.map(h => <button key={h} type="button" onClick={() => setHora(h)} style={s.horaChip(hora === h)}>{h}</button>)}
             </div>
             <input type="time" value={hora} onChange={e => setHora(e.target.value)} style={s.input} />
           </div>
-
           <div style={s.card}>
             <p style={s.label}>{t.notes}</p>
-            <textarea value={notas} onChange={e => setNotas(e.target.value)} rows={3}
-              placeholder={t.generalNotes}
-              style={{ ...s.input, resize: 'none' }} />
+            <textarea value={notas} onChange={e => setNotas(e.target.value)} rows={3} placeholder={t.generalNotes} style={{ ...s.input, resize: 'none' }} />
           </div>
-
           <button type="submit" disabled={loading || !data}
             style={{ width: '100%', background: data ? '#1d4ed8' : '#1a1a1a', color: data ? '#fff' : '#444', border: 'none', borderRadius: '14px', padding: '16px', fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.2em', cursor: data ? 'pointer' : 'not-allowed', marginTop: '4px', transition: 'all 0.15s' }}>
             {t.createSession}
@@ -123,9 +100,7 @@ const id = Array.isArray(params.id) ? params.id[0] : params.id as string
         </form>
       </div>
 
-      {mostrarQ && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(6px)', zIndex: 40 }} />
-      )}
+      {mostrarQ && <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(6px)', zIndex: 40 }} />}
 
       <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 50, transform: mostrarQ ? 'translateY(0)' : 'translateY(100%)', transition: 'transform 0.3s cubic-bezier(0.32, 0.72, 0, 1)', background: '#111', borderTop: '1px solid #1e1e1e', borderRadius: '24px 24px 0 0', maxHeight: '90vh', overflowY: 'auto' }}>
         <div style={{ display: 'flex', justifyContent: 'center', padding: '14px 0 0' }}>
@@ -138,8 +113,7 @@ const id = Array.isArray(params.id) ? params.id[0] : params.id as string
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', marginBottom: '32px' }}>
             {PERGUNTAS.map(({ key, label, emoji }) => {
-              const val = q[key]
-              const cor = CORES[val]
+              const val = q[key]; const cor = CORES[val]
               return (
                 <div key={key}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
