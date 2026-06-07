@@ -48,9 +48,13 @@ export default function Dashboard() {
       const horaAgora = new Date().toLocaleTimeString('pt-PT', { timeZone: 'Europe/Lisbon', hour: '2-digit', minute: '2-digit', hour12: false })
 
       const filtrados = (ag || []).filter(a => {
-        if (a.data > hoje) return true
-        if (!a.hora_inicio) return true
-        return a.hora_inicio.slice(0, 5) >= horaAgora
+        if (a.data > hoje) return true // dias futuros: sempre mostrar
+        if (!a.hora_inicio) return a.data >= hoje // sem hora: só se for hoje ou futuro
+        return a.hora_inicio.slice(0, 5) > horaAgora // hoje: só se ainda não começou
+      }).sort((a: any, b: any) => {
+        const da = a.data + (a.hora_inicio || '00:00')
+        const db = b.data + (b.hora_inicio || '00:00')
+        return da.localeCompare(db)
       }).slice(0, 3)
 
       setProximos(filtrados)
