@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
 
 type Exercicio = {
@@ -14,7 +14,7 @@ type Exercicio = {
 }
 
 function getYoutubeId(url: string) {
-  const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\s]+)/)
+  const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/shorts\/)([^&?\s]+)/)
   return match ? match[1] : null
 }
 
@@ -118,7 +118,7 @@ export default function Exercicios() {
               <a href="/dashboard" style={{ color: '#555', fontSize: '9px', letterSpacing: '0.15em', textTransform: 'uppercase', textDecoration: 'none', display: 'block', marginBottom: '6px' }}>
                 ← Dashboard
               </a>
-              <h1 style={{ fontSize: '26px', fontWeight: 800, color: '#fff', textTransform: 'uppercase', letterSpacing: '-0.01em', lineHeight: 1 }}>Exercícios</h1>
+              <h1 style={{ fontSize: '26px', fontWeight: 800, color: '#fff', textTransform: 'uppercase', letterSpacing: '-0.01em', lineHeight: 1 }}>Base de Dados</h1>
             </div>
             <button onClick={abrirNovo} style={{
               display: 'flex', alignItems: 'center', gap: '6px',
@@ -154,7 +154,8 @@ export default function Exercicios() {
               return (
                 <div key={ex.id} style={{ background: '#141414', border: '1px solid #222', borderRadius: '14px', overflow: 'hidden' }}>
                   <div style={{ padding: '16px', display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-                    {/* Thumb YouTube ou ícone */}
+
+                    {/* Thumbnail */}
                     <div
                       onClick={() => ytId && setVideoAberto(ex)}
                       style={{
@@ -202,7 +203,7 @@ export default function Exercicios() {
 
       {/* Modal formulário */}
       {modalOpen && (
-        <div onClick={() => setModalOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 100, display: 'flex', alignItems: 'flex-end', justifyContent: 'center', padding: '0' }}>
+        <div onClick={() => setModalOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 100, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
           <div onClick={e => e.stopPropagation()} style={{ background: '#111', border: '1px solid #222', borderRadius: '20px 20px 0 0', padding: '28px 20px 40px', width: '100%', maxWidth: '600px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <h2 style={{ fontSize: '14px', fontWeight: 800, color: '#fff', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>
               {editando ? 'Editar Exercício' : 'Novo Exercício'}
@@ -239,7 +240,7 @@ export default function Exercicios() {
             <div>
               <label style={s.label}>Link YouTube</label>
               <input value={form.youtube_url} onChange={e => setForm(f => ({ ...f, youtube_url: e.target.value }))}
-                placeholder="https://youtube.com/watch?v=..." style={s.input} />
+                placeholder="https://youtube.com/watch?v=... ou https://youtube.com/shorts/..." style={s.input} />
             </div>
 
             <div style={{ display: 'flex', gap: '10px', marginTop: '4px' }}>
