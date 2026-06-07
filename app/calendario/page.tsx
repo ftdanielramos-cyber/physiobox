@@ -16,7 +16,7 @@ type Agendamento = {
 }
 
 type Cliente = {
-  id: string
+  id: string | null
   nome: string
 }
 
