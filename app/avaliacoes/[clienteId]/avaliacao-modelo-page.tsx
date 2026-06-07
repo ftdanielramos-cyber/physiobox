@@ -2,175 +2,229 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase'
-import { useRouter } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import Voltar from '@/components/Voltar'
 
-type Cliente = { id: string; nome: string }
+type Teste = {
+  id: string
+  nome: string
+  descricao: string
+  tipo: 'score' | 'texto' | 'bilateral'
+}
 
-const MODELOS = [
-  {
-    id: 1,
+const MODELOS: Record<number, { nome: string; cor: string; testes: Teste[] }> = {
+  1: {
     nome: 'Modelo 1',
-    descricao: 'Avaliação Funcional Base',
     cor: '#3b82f6',
-    corBg: 'rgba(59,130,246,0.08)',
-    corBorder: 'rgba(59,130,246,0.2)',
+    testes: [
+      { id: 't1', nome: 'Teste 1', descricao: 'A definir', tipo: 'score' },
+      { id: 't2', nome: 'Teste 2', descricao: 'A definir', tipo: 'score' },
+      { id: 't3', nome: 'Teste 3', descricao: 'A definir', tipo: 'bilateral' },
+      { id: 't4', nome: 'Teste 4', descricao: 'A definir', tipo: 'score' },
+      { id: 't5', nome: 'Teste 5', descricao: 'A definir', tipo: 'texto' },
+    ],
   },
-  {
-    id: 2,
+  2: {
     nome: 'Modelo 2',
-    descricao: 'Avaliação Funcional Intermédia',
     cor: '#a855f7',
-    corBg: 'rgba(168,85,247,0.08)',
-    corBorder: 'rgba(168,85,247,0.2)',
+    testes: [
+      { id: 't1', nome: 'Teste 1', descricao: 'A definir', tipo: 'score' },
+      { id: 't2', nome: 'Teste 2', descricao: 'A definir', tipo: 'score' },
+      { id: 't3', nome: 'Teste 3', descricao: 'A definir', tipo: 'bilateral' },
+      { id: 't4', nome: 'Teste 4', descricao: 'A definir', tipo: 'score' },
+      { id: 't5', nome: 'Teste 5', descricao: 'A definir', tipo: 'texto' },
+    ],
   },
-  {
-    id: 3,
+  3: {
     nome: 'Modelo 3',
-    descricao: 'Avaliação Funcional Avançada',
     cor: '#10b981',
-    corBg: 'rgba(16,185,129,0.08)',
-    corBorder: 'rgba(16,185,129,0.2)',
+    testes: [
+      { id: 't1', nome: 'Teste 1', descricao: 'A definir', tipo: 'score' },
+      { id: 't2', nome: 'Teste 2', descricao: 'A definir', tipo: 'score' },
+      { id: 't3', nome: 'Teste 3', descricao: 'A definir', tipo: 'bilateral' },
+      { id: 't4', nome: 'Teste 4', descricao: 'A definir', tipo: 'score' },
+      { id: 't5', nome: 'Teste 5', descricao: 'A definir', tipo: 'texto' },
+    ],
   },
-]
+}
 
-export default function AvaliacoesPage() {
-  const [clientes, setClientes] = useState<Cliente[]>([])
-  const [clienteId, setClienteId] = useState('')
-  const [modeloId, setModeloId] = useState<number | null>(null)
-  const [pesquisa, setPesquisa] = useState('')
+const SCORES = [0, 1, 2, 3]
+const SCORE_LABELS: Record<number, string> = { 0: 'Não Realiza', 1: 'Fraco', 2: 'Bom', 3: 'Excelente' }
+const SCORE_CORES: Record<number, string> = { 0: '#ef4444', 1: '#f97316', 2: '#eab308', 3: '#22c55e' }
+
+export default function AvaliacaoModeloPage() {
+  const { clienteId, modeloId } = useParams()
   const router = useRouter()
   const supabase = createClient()
+  const modelo = MODELOS[Number(modeloId)]
+
+  const [cliente, setCliente] = useState<{ nome: string } | null>(null)
+  const [respostas, setRespostas] = useState<Record<string, any>>({})
+  const [notas, setNotas] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [testeAtivo, setTesteAtivo] = useState(0)
 
   useEffect(() => {
-    supabase.from('clientes').select('id, nome').order('nome').then(({ data }) => setClientes(data || []))
-  }, [])
+    supabase.from('clientes').select('nome').eq('id', clienteId).single().then(({ data }) => setCliente(data))
+  }, [clienteId])
 
-  const clientesFiltrados = clientes.filter(c =>
-    c.nome.toLowerCase().includes(pesquisa.toLowerCase())
+  if (!modelo) return (
+    <main style={{ minHeight: '100vh', background: '#0a0a0a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <p style={{ color: '#333', fontSize: '11px', textTransform: 'uppercase' }}>Modelo não encontrado.</p>
+    </main>
   )
 
-  function avancar() {
-    if (!clienteId || !modeloId) return
-    router.push(`/avaliacoes/${clienteId}/modelo/${modeloId}`)
+  const testes = modelo.testes
+  const cor = modelo.cor
+  const progresso = Math.round((Object.keys(respostas).length / testes.length) * 100)
+
+  function setScore(testeId: string, valor: number) {
+    setRespostas(prev => ({ ...prev, [testeId]: valor }))
   }
 
-  const modeloSelecionado = MODELOS.find(m => m.id === modeloId)
+  function setBilateral(testeId: string, lado: 'esquerdo' | 'direito', valor: number) {
+    setRespostas(prev => ({
+      ...prev,
+      [testeId]: { ...(prev[testeId] || {}), [lado]: valor }
+    }))
+  }
+
+  function setTexto(testeId: string, valor: string) {
+    setRespostas(prev => ({ ...prev, [testeId]: valor }))
+  }
+
+  async function guardarAvaliacao() {
+    setLoading(true)
+    const { data: { user } } = await supabase.auth.getUser()
+    await supabase.from('avaliacoes').insert({
+      cliente_id: clienteId,
+      fisio_id: user?.id,
+      modelo: Number(modeloId),
+      respostas,
+      notas: notas || null,
+      data: new Date().toISOString().split('T')[0],
+    })
+    setLoading(false)
+    router.push(`/clientes/${clienteId}`)
+  }
+
+  const inputStyle = { width: '100%', background: '#0d0d0d', border: '1px solid #1e1e1e', borderRadius: '10px', padding: '12px 16px', fontSize: '13px', color: '#fff', outline: 'none', resize: 'none' as const, letterSpacing: '0.05em' }
 
   return (
-    <main style={{ minHeight: '100vh', background: '#0a0a0a', padding: '40px 16px 100px' }}>
-      <div style={{ maxWidth: '600px', margin: '0 auto' }}>
+    <main style={{ minHeight: '100vh', background: '#030305', display: 'flex', flexDirection: 'column', padding: '40px 16px 100px', fontFamily: "'Space Mono', monospace", overflow: 'hidden', position: 'relative' }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Bebas+Neue&display=swap');
+        .grid-bg-av {
+          position: fixed; inset: 0; pointer-events: none; z-index: 0;
+          background-image: linear-gradient(rgba(59,130,246,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(59,130,246,0.04) 1px, transparent 1px);
+          background-size: 60px 60px;
+          animation: gridMoveAv 20s linear infinite;
+        }
+        @keyframes gridMoveAv { 0% { transform: translateY(0); } 100% { transform: translateY(60px); } }
+        .scanline-av {
+          position: fixed; left: 0; right: 0; height: 2px; pointer-events: none; z-index: 0;
+          background: linear-gradient(90deg, transparent, rgba(59,130,246,0.25), transparent);
+          animation: scanAv 8s linear infinite;
+        }
+        @keyframes scanAv { 0% { top: -2px; opacity: 0; } 5% { opacity: 1; } 95% { opacity: 1; } 100% { top: 100%; opacity: 0; } }
+        .pulse-ring {
+          position: absolute; border-radius: 50%;
+          border: 1px solid;
+          animation: ringPulse 3s ease-in-out infinite;
+        }
+        @keyframes ringPulse { 0%, 100% { transform: translate(-50%,-50%) scale(1); opacity: 0.4; } 50% { transform: translate(-50%,-50%) scale(1.08); opacity: 0.8; } }
+        .badge-blink { animation: badgeBlink 2s ease-in-out infinite; }
+        @keyframes badgeBlink { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .em-breve-title {
+          font-family: 'Bebas Neue', sans-serif;
+          animation: fadeUpAv 0.8s ease 0.3s both;
+        }
+        @keyframes fadeUpAv { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+      `}</style>
+
+      <div className="grid-bg-av" />
+      <div className="scanline-av" />
+
+      <div style={{ position: 'relative', zIndex: 10, maxWidth: '600px', margin: '0 auto', width: '100%' }}>
         <Voltar />
 
-        <div style={{ marginBottom: '28px', borderBottom: '1px solid #1a1a1a', paddingBottom: '24px' }}>
-          <h1 style={{ fontSize: '32px', fontWeight: 800, color: '#fff', textTransform: 'uppercase', letterSpacing: '-0.01em' }}>
-            Nova Avaliação
+        {/* Header */}
+        <div style={{ marginBottom: '24px', borderBottom: '1px solid #1a1a2a', paddingBottom: '24px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
+            <span style={{ fontSize: '9px', fontWeight: 700, color: cor, textTransform: 'uppercase', letterSpacing: '0.15em', background: `${cor}15`, border: `1px solid ${cor}30`, padding: '3px 10px', borderRadius: '6px' }}>
+              {modelo.nome}
+            </span>
+            <span style={{ fontSize: '9px', color: '#444', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+              Avaliação Funcional
+            </span>
+          </div>
+          <h1 style={{ fontSize: '26px', fontWeight: 800, color: '#fff', textTransform: 'uppercase', letterSpacing: '-0.01em', fontFamily: 'inherit' }}>
+            {cliente?.nome || '...'}
           </h1>
-          <p style={{ fontSize: '10px', color: '#444', textTransform: 'uppercase', letterSpacing: '0.1em', marginTop: '4px' }}>
-            Avaliação Funcional
-          </p>
         </div>
 
-        {/* STEP 1 — Cliente */}
-        <div style={{ marginBottom: '28px' }}>
-          <p style={{ fontSize: '9px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.18em', marginBottom: '12px' }}>
-            1 · Selecionar Cliente
-          </p>
+        {/* EM BREVE */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', paddingTop: '40px', textAlign: 'center', position: 'relative' }}>
 
-          {/* Pesquisa */}
-          <div style={{ position: 'relative', marginBottom: '10px' }}>
-            <svg width="14" height="14" fill="none" stroke="#444" strokeWidth="2" viewBox="0 0 24 24"
-              style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
-              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-            </svg>
-            <input
-              value={pesquisa}
-              onChange={e => setPesquisa(e.target.value)}
-              placeholder="Pesquisar cliente..."
-              style={{ width: '100%', background: '#0d0d0d', border: '1px solid #1e1e1e', borderRadius: '12px', padding: '12px 16px 12px 40px', fontSize: '13px', color: '#fff', outline: 'none', letterSpacing: '0.05em' }}
-            />
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '220px', overflowY: 'auto' }}>
-            {clientesFiltrados.map(c => (
-              <button key={c.id} onClick={() => setClienteId(c.id)}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: '12px',
-                  background: clienteId === c.id ? 'rgba(59,130,246,0.1)' : '#111',
-                  border: clienteId === c.id ? '1px solid rgba(59,130,246,0.4)' : '1px solid #1a1a1a',
-                  borderRadius: '12px', padding: '14px 16px', cursor: 'pointer', textAlign: 'left',
-                  transition: 'all 0.15s',
-                }}>
-                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: clienteId === c.id ? '#3b82f6' : '#222', flexShrink: 0, transition: 'background 0.15s' }} />
-                <span style={{ fontSize: '13px', fontWeight: 700, color: clienteId === c.id ? '#fff' : '#888', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  {c.nome}
-                </span>
-                {clienteId === c.id && (
-                  <svg width="14" height="14" fill="none" stroke="#3b82f6" strokeWidth="2.5" viewBox="0 0 24 24" style={{ marginLeft: 'auto' }}>
-                    <polyline points="20 6 9 17 4 12"/>
-                  </svg>
-                )}
-              </button>
+          {/* Anéis pulsantes */}
+          <div style={{ position: 'relative', width: '160px', height: '160px', marginBottom: '40px' }}>
+            {[160, 120, 80].map((size, i) => (
+              <div key={i} className="pulse-ring" style={{
+                width: size, height: size,
+                top: '50%', left: '50%',
+                borderColor: `${cor}${i === 0 ? '15' : i === 1 ? '25' : '40'}`,
+                animationDelay: `${i * 0.4}s`,
+              }} />
             ))}
-            {clientesFiltrados.length === 0 && (
-              <p style={{ fontSize: '11px', color: '#333', textTransform: 'uppercase', letterSpacing: '0.1em', padding: '12px 0' }}>Nenhum cliente encontrado.</p>
-            )}
+            {/* Ícone central */}
+            <div style={{
+              position: 'absolute', top: '50%', left: '50%',
+              transform: 'translate(-50%, -50%)',
+              width: '56px', height: '56px', borderRadius: '16px',
+              background: `${cor}15`, border: `1px solid ${cor}40`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <svg width="26" height="26" fill="none" stroke={cor} strokeWidth="1.5" viewBox="0 0 24 24">
+                <path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+              </svg>
+            </div>
           </div>
-        </div>
 
-        {/* STEP 2 — Modelo */}
-        <div style={{ marginBottom: '32px' }}>
-          <p style={{ fontSize: '9px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.18em', marginBottom: '12px' }}>
-            2 · Escolher Modelo
+          <div className="badge-blink" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '9px', color: cor, letterSpacing: '0.3em', textTransform: 'uppercase', marginBottom: '16px', border: `1px solid ${cor}30`, padding: '5px 14px', borderRadius: '2px', background: `${cor}08` }}>
+            <div style={{ width: '5px', height: '5px', borderRadius: '50%', background: cor }} />
+            Em Desenvolvimento
+          </div>
+
+          <h2 className="em-breve-title" style={{ fontSize: 'clamp(48px, 12vw, 72px)', color: '#fff', lineHeight: 0.9, letterSpacing: '-1px', marginBottom: '16px' }}>
+            Em Breve
+          </h2>
+
+          <p style={{ fontSize: '10px', color: '#333', textTransform: 'uppercase', letterSpacing: '0.25em', marginBottom: '40px', maxWidth: '260px', lineHeight: 1.8 }}>
+            Os testes do {modelo.nome} estão a ser configurados
           </p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            {MODELOS.map(m => (
-              <button key={m.id} onClick={() => setModeloId(m.id)}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: '16px',
-                  background: modeloId === m.id ? m.corBg : '#111',
-                  border: modeloId === m.id ? `1px solid ${m.corBorder}` : '1px solid #1a1a1a',
-                  borderRadius: '14px', padding: '18px 20px', cursor: 'pointer', textAlign: 'left',
-                  transition: 'all 0.15s',
-                }}>
-                <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: modeloId === m.id ? m.corBg : '#1a1a1a', border: `1px solid ${modeloId === m.id ? m.corBorder : '#222'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <span style={{ fontSize: '14px', fontWeight: 800, color: modeloId === m.id ? m.cor : '#444' }}>{m.id}</span>
+
+          {/* Linha decorativa */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%', maxWidth: '280px', marginBottom: '40px' }}>
+            <div style={{ flex: 1, height: '1px', background: `linear-gradient(to right, transparent, ${cor}30)` }} />
+            <span style={{ fontSize: '9px', color: '#2a2a3a', textTransform: 'uppercase', letterSpacing: '0.2em' }}>5 testes</span>
+            <div style={{ flex: 1, height: '1px', background: `linear-gradient(to left, transparent, ${cor}30)` }} />
+          </div>
+
+          {/* Testes placeholder */}
+          <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {[1,2,3,4,5].map(n => (
+              <div key={n} style={{ display: 'flex', alignItems: 'center', gap: '12px', background: '#0d0d0d', border: '1px solid #111', borderRadius: '10px', padding: '14px 16px', opacity: 0.4 }}>
+                <div style={{ width: '24px', height: '24px', borderRadius: '6px', border: `1px solid ${cor}20`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <span style={{ fontSize: '10px', fontWeight: 700, color: cor }}>{n}</span>
                 </div>
-                <div style={{ flex: 1 }}>
-                  <p style={{ fontSize: '13px', fontWeight: 800, color: modeloId === m.id ? m.cor : '#666', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '2px' }}>
-                    {m.nome}
-                  </p>
-                  <p style={{ fontSize: '10px', color: modeloId === m.id ? m.cor : '#333', textTransform: 'uppercase', letterSpacing: '0.08em', opacity: 0.8 }}>
-                    {m.descricao}
-                  </p>
-                </div>
-                {modeloId === m.id && (
-                  <svg width="16" height="16" fill="none" stroke={m.cor} strokeWidth="2.5" viewBox="0 0 24 24">
-                    <polyline points="20 6 9 17 4 12"/>
-                  </svg>
-                )}
-              </button>
+                <div style={{ flex: 1, height: '8px', background: '#1a1a1a', borderRadius: '4px' }} />
+                <div style={{ width: '40px', height: '8px', background: '#1a1a1a', borderRadius: '4px' }} />
+              </div>
             ))}
           </div>
         </div>
 
-        {/* BOTÃO AVANÇAR */}
-        <button
-          onClick={avancar}
-          disabled={!clienteId || !modeloId}
-          style={{
-            width: '100%',
-            background: clienteId && modeloId ? (modeloSelecionado?.cor || '#3b82f6') : '#1a1a1a',
-            color: clienteId && modeloId ? '#fff' : '#333',
-            border: 'none', borderRadius: '14px', padding: '16px',
-            fontSize: '12px', fontWeight: 800, textTransform: 'uppercase',
-            letterSpacing: '0.2em', cursor: clienteId && modeloId ? 'pointer' : 'not-allowed',
-            transition: 'all 0.2s',
-          }}>
-          {clienteId && modeloId
-            ? `Iniciar ${modeloSelecionado?.nome}`
-            : 'Seleciona Cliente e Modelo'}
-        </button>
+
       </div>
     </main>
   )
