@@ -1,9 +1,9 @@
 'use client'
- 
+
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase'
 import Voltar from '@/components/Voltar'
- 
+
 type Cliente = {
   id: string
   nome: string
@@ -11,7 +11,7 @@ type Cliente = {
   telefone: string
   data_nasc: string
 }
- 
+
 export default function ClientesPage() {
   const [clientes, setClientes] = useState<Cliente[]>([])
   const [loading, setLoading] = useState(true)
@@ -23,15 +23,15 @@ export default function ClientesPage() {
   const [telefone, setTelefone] = useState('')
   const [dataNasc, setDataNasc] = useState('')
   const supabase = createClient()
- 
+
   useEffect(() => { carregarClientes() }, [])
- 
+
   async function carregarClientes() {
     const { data } = await supabase.from('clientes').select('*').order('nome')
     setClientes(data || [])
     setLoading(false)
   }
- 
+
   function iniciarEdicao(c: Cliente) {
     setEditandoId(c.id)
     setNome(c.nome || '')
@@ -40,16 +40,16 @@ export default function ClientesPage() {
     setDataNasc(c.data_nasc || '')
     setMostrarForm(true)
   }
- 
+
   function cancelarForm() {
     setMostrarForm(false)
     setEditandoId(null)
     setNome(''); setEmail(''); setTelefone(''); setDataNasc('')
   }
- 
+
   async function guardarCliente(e: React.FormEvent) {
     e.preventDefault()
- 
+
     if (editandoId) {
       // EDITAR cliente existente
       const { error } = await supabase.from('clientes').update({
@@ -58,7 +58,7 @@ export default function ClientesPage() {
         telefone: telefone || null,
         data_nasc: dataNasc || null,
       }).eq('id', editandoId)
- 
+
       if (error) {
         alert('Erro ao atualizar: ' + error.message)
         return
@@ -80,32 +80,32 @@ export default function ClientesPage() {
         return
       }
     }
- 
+
     cancelarForm()
     carregarClientes()
   }
- 
+
   async function apagarCliente(clienteId: string) {
     if (!confirm('Tens a certeza? Todos os dados do cliente serão apagados.')) return
     await supabase.from('clientes').delete().eq('id', clienteId)
     carregarClientes()
   }
- 
+
   const clientesFiltrados = clientes.filter(c =>
     c.nome?.toLowerCase().includes(pesquisa.toLowerCase()) ||
     c.email?.toLowerCase().includes(pesquisa.toLowerCase()) ||
     c.telefone?.includes(pesquisa)
   )
- 
+
   const inputClass = "w-full bg-[#0d0d0d] border border-[#222] rounded-xl px-4 py-3 text-sm text-white tracking-wide placeholder:text-[#3a3a3a] focus:outline-none focus:border-[#3b82f6] transition-colors"
   const labelClass = "block text-[10px] font-semibold text-[#555] uppercase tracking-[0.12em] mb-1.5"
- 
+
   return (
     <main className="min-h-screen bg-[#0a0a0a] pb-24">
       <div className="max-w-2xl mx-auto px-4 py-10">
- 
+
         <Voltar />
- 
+
         <div className="flex items-center justify-between mb-6 border-b border-[#1a1a1a] pb-6">
           <h1 className="text-4xl font-extrabold text-white uppercase tracking-tight">Clientes</h1>
           <button
@@ -122,7 +122,7 @@ export default function ClientesPage() {
             </svg>
           </button>
         </div>
- 
+
         {/* PESQUISA */}
         <div className="relative mb-6">
           <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '3px', background: 'linear-gradient(180deg, #3b82f6 0%, transparent 100%)', borderRadius: '2px', zIndex: 1 }} />
@@ -144,7 +144,7 @@ export default function ClientesPage() {
             </button>
           )}
         </div>
- 
+
         {/* LISTA */}
         {loading ? (
           <p className="text-[#333] text-xs uppercase tracking-widest">A carregar...</p>
@@ -165,28 +165,28 @@ export default function ClientesPage() {
                     )}
                   </div>
                 </a>
- 
+
                 {/* Botão EDITAR */}
                 <button
                   onClick={() => iniciarEdicao(c)}
                   className="flex items-center justify-center w-9 h-9 rounded-xl transition-all mx-1"
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', flexShrink: 0, color: '#3b3b3b' }}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', flexShrink: 0, color: '#666' }}
                   onMouseEnter={e => (e.currentTarget.style.color = '#6366f1')}
-                  onMouseLeave={e => (e.currentTarget.style.color = '#3b3b3b')}
+                  onMouseLeave={e => (e.currentTarget.style.color = '#666')}
                   aria-label="Editar cliente">
                   <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                     <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                   </svg>
                 </button>
- 
+
                 {/* Botão APAGAR */}
                 <button
                   onClick={() => apagarCliente(c.id)}
                   className="flex items-center justify-center w-9 h-9 rounded-xl transition-all mx-2"
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', flexShrink: 0, color: '#3b3b3b' }}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', flexShrink: 0, color: '#666' }}
                   onMouseEnter={e => (e.currentTarget.style.color = '#ef4444')}
-                  onMouseLeave={e => (e.currentTarget.style.color = '#3b3b3b')}
+                  onMouseLeave={e => (e.currentTarget.style.color = '#666')}
                   aria-label="Eliminar cliente">
                   <svg width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                     <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/>
@@ -198,7 +198,7 @@ export default function ClientesPage() {
           </div>
         )}
       </div>
- 
+
       {/* Backdrop */}
       {mostrarForm && (
         <div
@@ -210,7 +210,7 @@ export default function ClientesPage() {
           }}
         />
       )}
- 
+
       {/* SLIDE-IN PANEL */}
       <div style={{
         position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 50,
@@ -226,7 +226,7 @@ export default function ClientesPage() {
         <div style={{ display: 'flex', justifyContent: 'center', padding: '14px 0 0' }}>
           <div style={{ width: '36px', height: '4px', borderRadius: '2px', background: '#2a2a2a' }} />
         </div>
- 
+
         <div style={{ padding: '20px 24px 40px' }}>
           {/* Header */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '28px' }}>
@@ -251,7 +251,7 @@ export default function ClientesPage() {
               </svg>
             </button>
           </div>
- 
+
           {/* Form */}
           <form onSubmit={guardarCliente} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <div>
@@ -274,9 +274,9 @@ export default function ClientesPage() {
               <input value={dataNasc} onChange={e => setDataNasc(e.target.value)}
                 type="date" className={inputClass} />
             </div>
- 
+
             <div style={{ height: '1px', background: '#1a1a1a', margin: '4px 0' }} />
- 
+
             <div style={{ display: 'flex', gap: '10px' }}>
               <button
                 type="submit"
@@ -307,7 +307,7 @@ export default function ClientesPage() {
           </form>
         </div>
       </div>
- 
+
       <style>{`
         @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
       `}</style>
