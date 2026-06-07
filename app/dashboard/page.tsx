@@ -171,6 +171,19 @@ export default function Dashboard() {
             <div style={{ flex: 1 }}><p style={s.cardTitle}>Agendamentos</p></div>
             <span style={s.arrow}>›</span>
           </a>
+
+          <a href="/avaliacoes" style={{ ...s.card, background: 'rgba(16,185,129,0.05)', border: '1px solid rgba(16,185,129,0.15)' }}>
+            <div style={{ ...s.iconBox, color: '#10b981', background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.2)' }}>
+              <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+                <path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+              </svg>
+            </div>
+            <div style={{ flex: 1 }}>
+              <p style={{ ...s.cardTitle, color: '#10b981' }}>Nova Avaliação</p>
+              <p style={{ ...s.cardSub, color: '#065f46' }}>Funcional · Modelos 1, 2 e 3</p>
+            </div>
+            <span style={{ ...s.arrow, color: '#10b981' }}>›</span>
+          </a>
         </div>
 
         {proximos.length > 0 && (
