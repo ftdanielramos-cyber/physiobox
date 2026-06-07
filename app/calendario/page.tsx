@@ -16,7 +16,7 @@ type Agendamento = {
 }
 
 type Cliente = {
-  id: string | null
+  id: string
   nome: string
 }
 
@@ -34,7 +34,7 @@ export default function CalendarioPage() {
   const [notas, setNotas] = useState('')
   const [loading, setLoading] = useState(false)
   // Cliente selecionado para ver agendamentos no popup
-  const [clientePopup, setClientePopup] = useState<Cliente | null>(null)
+  const [clientePopup, setClientePopup] = useState<{ id: string | null; nome: string } | null>(null)
   const supabase = createClient()
 
   useEffect(() => { carregarAgendamentos() }, [mesAtual])
@@ -121,9 +121,9 @@ export default function CalendarioPage() {
   }
 
   // Agrupar agendamentos do dia por cliente
-  function clientesNoDia(dia: number): { cliente: { id: string | null; nome: string }, ags: Agendamento[] }[] {
+  function clientesNoDia(dia: number): { cliente: { id: string | null | undefined; nome: string }, ags: Agendamento[] }[] {
     const ags = agendamentosNoDia(dia)
-    const mapa = new Map<string, { cliente: { id: string | null; nome: string }, ags: Agendamento[] }>()
+    const mapa = new Map<string, { cliente: { id: string | null | undefined; nome: string }, ags: Agendamento[] }>()
     ags.forEach(a => {
       const key = a.cliente_id || 'sem-cliente'
       if (!mapa.has(key)) {
@@ -218,7 +218,7 @@ export default function CalendarioPage() {
                 </p>
                 <select value={clienteId} onChange={e => setClienteId(e.target.value)} style={s.input}>
                   <option value="">Sem Cliente Associado</option>
-                  {clientes.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
+                  {clientes.map(c => <option key={c.id} value={c.id ?? ''}>{c.nome}</option>)}
                 </select>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                   <div>
