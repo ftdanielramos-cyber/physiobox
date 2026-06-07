@@ -23,7 +23,8 @@ type Ficha = {
 }
 
 export default function ClientePage() {
-  const { id } = useParams()
+  const params = useParams()
+const id = Array.isArray(params.id) ? params.id[0] : params.id as string
   const [cliente, setCliente] = useState<Cliente | null>(null)
   const [ficha, setFicha] = useState<Ficha | null>(null)
   const [sessoes, setSessoes] = useState<any[]>([])
