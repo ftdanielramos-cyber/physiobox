@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { createClient } from '@/lib/supabase'
 
 type Sessao = {
   id: string
@@ -30,7 +29,15 @@ export default function GerarReportButton({ clienteId, nomeCliente, emailCliente
   function abrirModal() {
     setSelecionadas(new Set(sessoes.map(s => s.id)))
     setEtapa('selecionar')
+    setGerandoPDF(false)
     setModalAberto(true)
+  }
+
+  function fecharModal() {
+    setModalAberto(false)
+    setGerandoPDF(false)
+    setEnviando(false)
+    setEtapa('selecionar')
   }
 
   function toggleSessao(id: string) {
@@ -52,22 +59,26 @@ export default function GerarReportButton({ clienteId, nomeCliente, emailCliente
       .sort((a, b) => a.data.localeCompare(b.data))
   }
 
-  // Gera o HTML do relatório e converte para PDF via print
   async function downloadPDF() {
     setGerandoPDF(true)
     const escolhidas = sessoesEscolhidas()
     const html = gerarHTML(escolhidas)
 
     const janela = window.open('', '_blank')
-    if (!janela) { alert('Permite pop-ups para gerar o PDF.'); setGerandoPDF(false); return }
+    if (!janela) {
+      alert('Permite pop-ups para gerar o PDF.')
+      setGerandoPDF(false)
+      return
+    }
     janela.document.write(html)
     janela.document.close()
-    janela.onload = () => {
-      setTimeout(() => {
-        janela.print()
-        setGerandoPDF(false)
-      }, 500)
-    }
+
+    // Após abrir a janela de impressão, reseta o estado e fecha o modal
+    setTimeout(() => {
+      janela.print()
+      setGerandoPDF(false)
+      fecharModal()
+    }, 600)
   }
 
   async function enviarEmail() {
@@ -78,40 +89,51 @@ export default function GerarReportButton({ clienteId, nomeCliente, emailCliente
       const res = await fetch('/api/send-report', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email,
-          nomeCliente,
-          sessoes: escolhidas,
-        }),
+        body: JSON.stringify({ email, nomeCliente, sessoes: escolhidas }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Erro ao enviar')
       alert(`Relatório enviado para ${email} com sucesso!`)
-      setModalAberto(false)
+      fecharModal()
     } catch (err: any) {
       alert('Erro ao enviar email: ' + err.message)
+      setEnviando(false)
     }
-    setEnviando(false)
   }
 
   function gerarHTML(escolhidas: Sessao[]): string {
     const dataAtual = new Date().toLocaleDateString('pt-PT', { day: 'numeric', month: 'long', year: 'numeric' })
+
     const linhasSessoes = escolhidas.map((s, i) => {
-      const data = new Date(s.data + 'T00:00:00').toLocaleDateString('pt-PT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+      const data = new Date(s.data + 'T00:00:00').toLocaleDateString('pt-PT', {
+        weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
+      })
       return `
-        <div style="margin-bottom:20px; padding:16px; border:1px solid #e5e7eb; border-radius:8px; break-inside:avoid;">
-          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
-            <div style="display:flex; align-items:center; gap:10px;">
-              <span style="display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:6px; font-size:11px; font-weight:700; color:#16a34a;">${i + 1}</span>
-              <strong style="font-size:13px; color:#111; text-transform:capitalize;">${data}</strong>
+        <div style="margin-bottom:16px; background:#111827; border:1px solid #1f2937; border-radius:12px; overflow:hidden; break-inside:avoid;">
+          <div style="padding:14px 18px; border-bottom:1px solid #1f2937; display:flex; align-items:center; justify-content:space-between;">
+            <div style="display:flex; align-items:center; gap:12px;">
+              <span style="display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; background:#1e3a5f; border:1px solid #2563eb; border-radius:8px; font-size:11px; font-weight:800; color:#3b82f6; flex-shrink:0;">${i + 1}</span>
+              <strong style="font-size:13px; color:#f9fafb; text-transform:capitalize; font-weight:700; letter-spacing:0.02em;">${data}</strong>
             </div>
-            ${s.tipo ? `<span style="font-size:10px; background:#f0f9ff; color:#0369a1; padding:3px 10px; border-radius:20px; font-weight:600; text-transform:uppercase; letter-spacing:0.05em;">${s.tipo}</span>` : ''}
+            ${s.tipo ? `<span style="font-size:9px; background:#1e3a5f; color:#60a5fa; padding:4px 10px; border-radius:20px; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; border:1px solid #2563eb40;">${s.tipo}</span>` : ''}
           </div>
-          ${s.duracao ? `<p style="font-size:11px; color:#6b7280; margin:0 0 8px; font-weight:500;">⏱ Duração: ${s.duracao} minutos</p>` : ''}
-          ${s.notas ? `<p style="font-size:12px; color:#374151; line-height:1.6; margin:0; white-space:pre-wrap;">${s.notas}</p>` : '<p style="font-size:12px; color:#9ca3af; font-style:italic; margin:0;">Sem notas registadas.</p>'}
+          <div style="padding:14px 18px;">
+            ${s.duracao ? `<p style="font-size:11px; color:#6b7280; margin:0 0 10px; font-weight:600; letter-spacing:0.05em;">⏱ ${s.duracao} minutos</p>` : ''}
+            ${s.notas
+              ? `<p style="font-size:12px; color:#d1d5db; line-height:1.7; margin:0; white-space:pre-wrap;">${s.notas}</p>`
+              : `<p style="font-size:12px; color:#374151; font-style:italic; margin:0;">Sem notas registadas.</p>`
+            }
+          </div>
         </div>
       `
     }).join('')
+
+    const dataInicio = escolhidas.length > 0
+      ? new Date(escolhidas[0].data + 'T00:00:00').toLocaleDateString('pt-PT')
+      : ''
+    const dataFim = escolhidas.length > 0
+      ? new Date(escolhidas[escolhidas.length - 1].data + 'T00:00:00').toLocaleDateString('pt-PT')
+      : ''
 
     return `<!DOCTYPE html>
 <html lang="pt">
@@ -120,45 +142,67 @@ export default function GerarReportButton({ clienteId, nomeCliente, emailCliente
   <title>Relatório — ${nomeCliente}</title>
   <style>
     * { margin:0; padding:0; box-sizing:border-box; }
-    body { font-family: 'Helvetica Neue', Arial, sans-serif; color:#111; background:#fff; padding:40px; }
+    body {
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      background: #030712;
+      color: #f9fafb;
+      padding: 40px;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
     @media print {
-      body { padding: 20px; }
-      @page { margin: 15mm; }
+      body { padding: 20px; background: #030712 !important; }
+      @page { margin: 12mm; background: #030712; }
     }
   </style>
 </head>
 <body>
+
   <!-- Cabeçalho -->
-  <div style="display:flex; align-items:flex-start; justify-content:space-between; padding-bottom:24px; border-bottom:2px solid #111; margin-bottom:28px;">
+  <div style="display:flex; align-items:flex-start; justify-content:space-between; padding-bottom:24px; border-bottom:1px solid #1f2937; margin-bottom:28px;">
     <div>
-      <div style="font-size:22px; font-weight:900; letter-spacing:-0.03em; color:#111; text-transform:uppercase;">PhysioBox</div>
-      <div style="font-size:10px; color:#6b7280; text-transform:uppercase; letter-spacing:0.1em; margin-top:2px;">Performance & Reabilitação</div>
+      <div style="font-size:26px; font-weight:900; letter-spacing:-0.04em; color:#fff; text-transform:uppercase; line-height:1;">PhysioBox</div>
+      <div style="font-size:9px; color:#3b82f6; text-transform:uppercase; letter-spacing:0.18em; margin-top:4px; font-weight:700;">Performance & Reabilitação</div>
     </div>
     <div style="text-align:right;">
-      <div style="font-size:10px; color:#6b7280; text-transform:uppercase; letter-spacing:0.08em;">Relatório gerado em</div>
-      <div style="font-size:12px; font-weight:600; color:#374151; margin-top:2px;">${dataAtual}</div>
+      <div style="font-size:9px; color:#4b5563; text-transform:uppercase; letter-spacing:0.1em; font-weight:600;">Gerado em</div>
+      <div style="font-size:12px; font-weight:700; color:#9ca3af; margin-top:3px;">${dataAtual}</div>
     </div>
   </div>
 
-  <!-- Paciente -->
-  <div style="background:#f9fafb; border:1px solid #e5e7eb; border-radius:10px; padding:16px 20px; margin-bottom:28px;">
-    <div style="font-size:9px; color:#9ca3af; text-transform:uppercase; letter-spacing:0.12em; font-weight:600; margin-bottom:4px;">Paciente</div>
-    <div style="font-size:18px; font-weight:800; color:#111; text-transform:uppercase; letter-spacing:0.02em;">${nomeCliente}</div>
-    <div style="margin-top:8px; display:flex; gap:20px;">
-      <span style="font-size:11px; color:#6b7280;"><strong style="color:#374151;">${escolhidas.length}</strong> sessão${escolhidas.length !== 1 ? 'ões' : ''} incluída${escolhidas.length !== 1 ? 's' : ''}</span>
-      ${escolhidas.length > 0 ? `<span style="font-size:11px; color:#6b7280;">De <strong style="color:#374151;">${new Date(escolhidas[0].data + 'T00:00:00').toLocaleDateString('pt-PT')}</strong> a <strong style="color:#374151;">${new Date(escolhidas[escolhidas.length - 1].data + 'T00:00:00').toLocaleDateString('pt-PT')}</strong></span>` : ''}
+  <!-- Card Paciente -->
+  <div style="background:#0f172a; border:1px solid #1e3a5f; border-radius:14px; padding:20px 24px; margin-bottom:28px; position:relative; overflow:hidden;">
+    <div style="position:absolute; top:0; left:0; right:0; height:3px; background:linear-gradient(90deg, #2563eb, #3b82f6, transparent);"></div>
+    <div style="font-size:9px; color:#3b82f6; text-transform:uppercase; letter-spacing:0.15em; font-weight:700; margin-bottom:6px;">Paciente</div>
+    <div style="font-size:22px; font-weight:900; color:#fff; text-transform:uppercase; letter-spacing:-0.01em; margin-bottom:12px;">${nomeCliente}</div>
+    <div style="display:flex; gap:24px; flex-wrap:wrap;">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <span style="font-size:9px; color:#4b5563; text-transform:uppercase; letter-spacing:0.1em; font-weight:600;">Sessões</span>
+        <span style="font-size:14px; font-weight:800; color:#3b82f6;">${escolhidas.length}</span>
+      </div>
+      ${escolhidas.length > 0 ? `
+      <div style="display:flex; align-items:center; gap:8px;">
+        <span style="font-size:9px; color:#4b5563; text-transform:uppercase; letter-spacing:0.1em; font-weight:600;">Período</span>
+        <span style="font-size:11px; font-weight:700; color:#9ca3af;">${dataInicio} → ${dataFim}</span>
+      </div>` : ''}
     </div>
+  </div>
+
+  <!-- Label sessões -->
+  <div style="display:flex; align-items:center; gap:10px; margin-bottom:16px;">
+    <div style="font-size:9px; color:#4b5563; text-transform:uppercase; letter-spacing:0.18em; font-weight:700;">Registo de Sessões</div>
+    <div style="flex:1; height:1px; background:#1f2937;"></div>
   </div>
 
   <!-- Sessões -->
-  <div style="font-size:9px; color:#9ca3af; text-transform:uppercase; letter-spacing:0.15em; font-weight:700; margin-bottom:14px;">Registo de Sessões</div>
-  ${linhasSessoes || '<p style="color:#9ca3af; font-size:12px; font-style:italic;">Nenhuma sessão selecionada.</p>'}
+  ${linhasSessoes || '<p style="color:#374151; font-size:12px; font-style:italic;">Nenhuma sessão selecionada.</p>'}
 
   <!-- Rodapé -->
-  <div style="margin-top:40px; padding-top:16px; border-top:1px solid #e5e7eb; display:flex; justify-content:space-between; align-items:center;">
-    <span style="font-size:10px; color:#9ca3af;">PhysioBox · Documento confidencial</span>
-    <span style="font-size:10px; color:#9ca3af;">${dataAtual}</span>
+  <div style="margin-top:40px; padding-top:16px; border-top:1px solid #1f2937; display:flex; justify-content:space-between; align-items:center;">
+    <span style="font-size:9px; color:#374151; text-transform:uppercase; letter-spacing:0.1em; font-weight:600;">PhysioBox · Documento Confidencial</span>
+    <span style="font-size:9px; color:#374151;">${dataAtual}</span>
   </div>
+
 </body>
 </html>`
   }
@@ -191,7 +235,7 @@ export default function GerarReportButton({ clienteId, nomeCliente, emailCliente
       {/* Modal */}
       {modalAberto && (
         <>
-          <div onClick={() => setModalAberto(false)}
+          <div onClick={fecharModal}
             style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(4px)', zIndex: 40 }} />
           <div style={{
             position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 50,
@@ -211,7 +255,7 @@ export default function GerarReportButton({ clienteId, nomeCliente, emailCliente
                     {etapa === 'selecionar' ? 'Selecionar Sessões' : 'Enviar Relatório'}
                   </h2>
                 </div>
-                <button onClick={() => setModalAberto(false)}
+                <button onClick={fecharModal}
                   style={{ width: '36px', height: '36px', borderRadius: '10px', background: '#1a1a1a', border: '1px solid #222', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#555' }}>
                   <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
                     <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
@@ -221,7 +265,6 @@ export default function GerarReportButton({ clienteId, nomeCliente, emailCliente
 
               {etapa === 'selecionar' ? (
                 <>
-                  {/* Selecionar/desselecionar tudo */}
                   <button onClick={toggleTodas}
                     style={{
                       width: '100%', marginBottom: '12px', padding: '10px',
@@ -265,9 +308,7 @@ export default function GerarReportButton({ clienteId, nomeCliente, emailCliente
                   </div>
 
                   <div style={{ display: 'flex', gap: '10px' }}>
-                    <button
-                      onClick={downloadPDF}
-                      disabled={selecionadas.size === 0 || gerandoPDF}
+                    <button onClick={downloadPDF} disabled={selecionadas.size === 0 || gerandoPDF}
                       style={{
                         flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
                         background: selecionadas.size > 0 ? '#1d4ed8' : '#1a1a1a',
@@ -282,9 +323,7 @@ export default function GerarReportButton({ clienteId, nomeCliente, emailCliente
                       </svg>
                       {gerandoPDF ? 'A gerar...' : 'Download PDF'}
                     </button>
-                    <button
-                      onClick={() => setEtapa('enviar')}
-                      disabled={selecionadas.size === 0}
+                    <button onClick={() => setEtapa('enviar')} disabled={selecionadas.size === 0}
                       style={{
                         flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
                         background: selecionadas.size > 0 ? 'rgba(59,130,246,0.1)' : '#1a1a1a',
@@ -303,7 +342,6 @@ export default function GerarReportButton({ clienteId, nomeCliente, emailCliente
                   </div>
                 </>
               ) : (
-                /* Etapa enviar */
                 <>
                   <div style={{ background: '#0d0d0d', border: '1px solid #1a1a1a', borderRadius: '12px', padding: '14px 16px', marginBottom: '20px' }}>
                     <p style={{ fontSize: '10px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '4px' }}>Resumo</p>
@@ -315,16 +353,9 @@ export default function GerarReportButton({ clienteId, nomeCliente, emailCliente
                     <label style={{ display: 'block', fontSize: '9px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.15em', fontWeight: 700, marginBottom: '8px' }}>
                       Email do Destinatário
                     </label>
-                    <input
-                      type="email"
-                      value={email}
-                      onChange={e => setEmail(e.target.value)}
+                    <input type="email" value={email} onChange={e => setEmail(e.target.value)}
                       placeholder="email@exemplo.com"
-                      style={{
-                        width: '100%', background: '#0d0d0d', border: '1px solid #222',
-                        borderRadius: '10px', padding: '12px 14px', fontSize: '13px',
-                        color: '#fff', outline: 'none', boxSizing: 'border-box' as const,
-                      }} />
+                      style={{ width: '100%', background: '#0d0d0d', border: '1px solid #222', borderRadius: '10px', padding: '12px 14px', fontSize: '13px', color: '#fff', outline: 'none', boxSizing: 'border-box' as const }} />
                   </div>
 
                   <div style={{ display: 'flex', gap: '10px' }}>
