@@ -39,6 +39,8 @@ export default function CalendarioPage() {
   const [notas, setNotas] = useState('')
   const [loading, setLoading] = useState(false)
   const [clientePopup, setClientePopup] = useState<ClientePopup | null>(null)
+  const [enviandoLembrete, setEnviandoLembrete] = useState<string | null>(null) // id do agendamento a enviar
+  const [lembreteEnviado, setLembreteEnviado] = useState<string | null>(null) // id do agendamento enviado
   const supabase = createClient()
 
   useEffect(() => { carregarAgendamentos() }, [mesAtual])
@@ -135,6 +137,33 @@ export default function CalendarioPage() {
   function primeiroDiaSemana() {
     const d = new Date(mesAtual.getFullYear(), mesAtual.getMonth(), 1).getDay()
     return d === 0 ? 6 : d - 1
+  }
+
+  async function enviarLembrete(a: Agendamento) {
+    setEnviandoLembrete(a.id)
+    try {
+      const res = await fetch('/api/lembrete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          clienteNome: clientePopup?.nome || 'Cliente',
+          data: a.data,
+          horaInicio: a.hora_inicio,
+          horaFim: a.hora_fim,
+          tipo: a.tipo,
+          notas: a.notas,
+        }),
+      })
+      if (res.ok) {
+        setLembreteEnviado(a.id)
+        setTimeout(() => setLembreteEnviado(null), 3000)
+      } else {
+        alert('Erro ao enviar lembrete.')
+      }
+    } catch {
+      alert('Erro ao enviar lembrete.')
+    }
+    setEnviandoLembrete(null)
   }
 
   const meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
@@ -337,6 +366,15 @@ export default function CalendarioPage() {
                           onMouseEnter={e => (e.currentTarget.style.color = '#ef4444')}
                           onMouseLeave={e => (e.currentTarget.style.color = '#333')}
                           aria-label="Apagar">×</button>
+                        <button
+                          onClick={() => enviarLembrete(a)}
+                          disabled={enviandoLembrete === a.id}
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px 6px', borderRadius: '8px', fontSize: '15px', color: lembreteEnviado === a.id ? '#22c55e' : '#555' }}
+                          onMouseEnter={e => { if (lembreteEnviado !== a.id) e.currentTarget.style.color = '#3b82f6' }}
+                          onMouseLeave={e => { if (lembreteEnviado !== a.id) e.currentTarget.style.color = '#555' }}
+                          aria-label="Enviar Lembrete">
+                          {enviandoLembrete === a.id ? '...' : lembreteEnviado === a.id ? '✓' : '✉'}
+                        </button>
                       </div>
                     </div>
                   </div>
