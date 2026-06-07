@@ -42,7 +42,6 @@ export default function NovaSessaoPage() {
 
   async function criarSessao() {
     setLoading(true)
-    setMostrarQ(false)
     const { data: { user } } = await supabase.auth.getUser()
     const { data: sessao } = await supabase.from('sessoes').insert({
       cliente_id: id,
@@ -145,7 +144,6 @@ export default function NovaSessaoPage() {
       {/* BACKDROP */}
       {mostrarQ && (
         <div
-          onClick={() => setMostrarQ(false)}
           style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(6px)', zIndex: 40 }}
         />
       )}

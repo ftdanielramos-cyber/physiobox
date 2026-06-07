@@ -29,11 +29,32 @@ type Registo = {
   sets?: SetDB[]
 }
 
+type Sessao = {
+  id: string
+  data: string
+  hora: string
+  energia: number | null
+  sono: number | null
+  alimentacao: number | null
+  predisposicao: number | null
+}
+
+const CORES = ['', '#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6']
+const LABELS = ['', 'Muito Mau', 'Mau', 'Regular', 'Bom', 'Muito Bom']
+
+const METRICAS = [
+  { key: 'energia',       label: 'Energia',      emoji: '⚡' },
+  { key: 'sono',          label: 'Sono',         emoji: '🌙' },
+  { key: 'alimentacao',   label: 'Alimentação',  emoji: '🥗' },
+  { key: 'predisposicao', label: 'Predisposição',emoji: '💪' },
+] as const
+
 export default function SessaoPage() {
   const { id, sessaoId } = useParams()
+  const [sessao, setSessao] = useState<Sessao | null>(null)
   const [registos, setRegistos] = useState<Registo[]>([])
   const [mostrarForm, setMostrarForm] = useState(false)
-  const [editandoId, setEditandoId] = useState<string | null>(null) // ID do registo em edição
+  const [editandoId, setEditandoId] = useState<string | null>(null)
   const [tipo, setTipo] = useState<'exercicio' | 'intervencao'>('exercicio')
   const [nomeExercicio, setNomeExercicio] = useState('')
   const [descricao, setDescricao] = useState('')
@@ -46,9 +67,11 @@ export default function SessaoPage() {
   const holdRef = useRef<any>(null)
   const touchUsadoRef = useRef(false)
 
-  useEffect(() => { carregarRegistos() }, [sessaoId])
+  useEffect(() => { carregarDados() }, [sessaoId])
 
-  async function carregarRegistos() {
+  async function carregarDados() {
+    const { data: s } = await supabase.from('sessoes').select('id, data, hora, energia, sono, alimentacao, predisposicao').eq('id', sessaoId).single()
+    setSessao(s)
     const { data } = await supabase.from('registos').select('*, sets(id, numero, repeticoes, carga)').eq('sessao_id', sessaoId).order('ordem')
     setRegistos((data as any) || [])
   }
@@ -89,7 +112,6 @@ export default function SessaoPage() {
     }
   }
 
-  // Preencher o formulário com os dados do registo a editar
   function iniciarEdicao(r: Registo) {
     setEditandoId(r.id)
     setTipo(r.tipo as 'exercicio' | 'intervencao')
@@ -99,11 +121,7 @@ export default function SessaoPage() {
     setLado(r.lado || 'esquerdo')
     setNotas(r.notas || '')
     if (r.sets && r.sets.length > 0) {
-      setSets(
-        [...r.sets]
-          .sort((a, b) => a.numero - b.numero)
-          .map(s => ({ numero: s.numero, repeticoes: s.repeticoes, carga: s.carga }))
-      )
+      setSets([...r.sets].sort((a, b) => a.numero - b.numero).map(s => ({ numero: s.numero, repeticoes: s.repeticoes, carga: s.carga })))
     } else {
       setSets([{ numero: 1, repeticoes: 10, carga: 0 }])
     }
@@ -123,9 +141,7 @@ export default function SessaoPage() {
 
   async function guardarRegisto(e: React.FormEvent) {
     e.preventDefault()
-
     if (editandoId) {
-      // EDITAR registo existente
       await supabase.from('registos').update({
         tipo,
         nome_exercicio: tipo === 'exercicio' ? nomeExercicio : null,
@@ -134,19 +150,13 @@ export default function SessaoPage() {
         lado: tipo === 'exercicio' && !bilateral ? lado : null,
         notas: notas || null,
       }).eq('id', editandoId)
-
       if (tipo === 'exercicio') {
-        // Apagar os sets antigos e inserir os novos
         await supabase.from('sets').delete().eq('registo_id', editandoId)
-        await supabase.from('sets').insert(
-          sets.map(s => ({ registo_id: editandoId, numero: s.numero, repeticoes: s.repeticoes, carga: s.carga }))
-        )
+        await supabase.from('sets').insert(sets.map(s => ({ registo_id: editandoId, numero: s.numero, repeticoes: s.repeticoes, carga: s.carga })))
       }
     } else {
-      // CRIAR novo registo
       const { data: registo } = await supabase.from('registos').insert({
-        sessao_id: sessaoId,
-        tipo,
+        sessao_id: sessaoId, tipo,
         nome_exercicio: tipo === 'exercicio' ? nomeExercicio : null,
         descricao: tipo === 'intervencao' ? descricao : null,
         bilateral: tipo === 'exercicio' ? bilateral : null,
@@ -154,22 +164,20 @@ export default function SessaoPage() {
         notas: notas || null,
         ordem: registos.length
       }).select().single()
-
       if (registo && tipo === 'exercicio') {
-        await supabase.from('sets').insert(
-          sets.map(s => ({ registo_id: registo.id, numero: s.numero, repeticoes: s.repeticoes, carga: s.carga }))
-        )
+        await supabase.from('sets').insert(sets.map(s => ({ registo_id: registo.id, numero: s.numero, repeticoes: s.repeticoes, carga: s.carga })))
       }
     }
-
     cancelarForm()
-    carregarRegistos()
+    carregarDados()
   }
 
   async function apagarRegisto(registoId: string) {
     await supabase.from('registos').delete().eq('id', registoId)
-    carregarRegistos()
+    carregarDados()
   }
+
+  const temQuestionario = sessao && (sessao.energia || sessao.sono || sessao.alimentacao || sessao.predisposicao)
 
   const c = {
     page: { minHeight: '100vh', background: '#0a0a0a', padding: '40px 16px 100px' } as React.CSSProperties,
@@ -182,43 +190,40 @@ export default function SessaoPage() {
   const tipoBtn = (ativo: boolean): React.CSSProperties => ({
     flex: 1, padding: '16px', borderRadius: '14px', fontSize: '13px', fontWeight: 800,
     textTransform: 'uppercase', letterSpacing: '0.1em', cursor: 'pointer',
-    background: ativo ? '#1d4ed8' : '#0d0d0d',
-    border: ativo ? '1px solid #2563eb' : '1px solid #1e1e1e',
+    background: ativo ? '#1d4ed8' : '#0d0d0d', border: ativo ? '1px solid #2563eb' : '1px solid #1e1e1e',
     color: ativo ? '#fff' : '#666', transition: 'all 0.15s',
   })
 
   const ladoBtn = (ativo: boolean): React.CSSProperties => ({
     flex: 1, padding: '10px', borderRadius: '10px', fontSize: '11px', fontWeight: 700,
     textTransform: 'uppercase', letterSpacing: '0.08em', cursor: 'pointer',
-    background: ativo ? '#1d4ed8' : '#0d0d0d',
-    border: ativo ? '1px solid #2563eb' : '1px solid #1e1e1e',
+    background: ativo ? '#1d4ed8' : '#0d0d0d', border: ativo ? '1px solid #2563eb' : '1px solid #1e1e1e',
     color: ativo ? '#fff' : '#666', transition: 'all 0.15s',
   })
 
   const holdProps = (index: number, campo: 'repeticoes' | 'carga', delta: number) => ({
-    onMouseDown: () => {
-      if (touchUsadoRef.current) return
-      iniciarHold(index, campo, delta)
-    },
+    onMouseDown: () => { if (touchUsadoRef.current) return; iniciarHold(index, campo, delta) },
     onMouseUp: pararHold,
     onMouseLeave: pararHold,
-    onTouchStart: (e: React.TouchEvent) => {
-      e.preventDefault()
-      touchUsadoRef.current = true
-      iniciarHold(index, campo, delta)
-    },
-    onTouchEnd: (e: React.TouchEvent) => {
-      e.preventDefault()
-      pararHold()
-    },
+    onTouchStart: (e: React.TouchEvent) => { e.preventDefault(); touchUsadoRef.current = true; iniciarHold(index, campo, delta) },
+    onTouchEnd: (e: React.TouchEvent) => { e.preventDefault(); pararHold() },
   })
 
   return (
     <main style={c.page}>
       <div style={c.wrap}>
         <Voltar />
+
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '28px', borderBottom: '1px solid #1a1a1a', paddingBottom: '24px' }}>
-          <h1 style={{ fontSize: '32px', fontWeight: 800, color: '#fff', textTransform: 'uppercase', letterSpacing: '-0.01em' }}>Sessão</h1>
+          <div>
+            <h1 style={{ fontSize: '32px', fontWeight: 800, color: '#fff', textTransform: 'uppercase', letterSpacing: '-0.01em' }}>Sessão</h1>
+            {sessao?.data && (
+              <p style={{ fontSize: '10px', color: '#444', textTransform: 'uppercase', letterSpacing: '0.1em', marginTop: '4px' }}>
+                {new Date(sessao.data + 'T00:00:00').toLocaleDateString('pt-PT', { weekday: 'long', day: 'numeric', month: 'long' })}
+                {sessao.hora ? ` · ${sessao.hora.slice(0, 5)}` : ''}
+              </p>
+            )}
+          </div>
           <button onClick={() => mostrarForm && !editandoId ? cancelarForm() : (setMostrarForm(!mostrarForm), setEditandoId(null))}
             style={{
               width: '44px', height: '44px', borderRadius: '14px',
@@ -233,10 +238,40 @@ export default function SessaoPage() {
           </button>
         </div>
 
+        {/* CARD QUESTIONÁRIO */}
+        {temQuestionario && (
+          <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '20px', marginBottom: '24px' }}>
+            <p style={{ fontSize: '9px', color: '#3b82f6', textTransform: 'uppercase', letterSpacing: '0.15em', fontWeight: 700, marginBottom: '16px' }}>
+              Avaliação Inicial
+            </p>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              {METRICAS.map(({ key, label, emoji }) => {
+                const val = sessao?.[key] as number | null
+                if (!val) return null
+                const cor = CORES[val]
+                return (
+                  <div key={key} style={{ background: '#0d0d0d', border: '1px solid #1e1e1e', borderRadius: '12px', padding: '12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
+                      <span style={{ fontSize: '14px' }}>{emoji}</span>
+                      <span style={{ fontSize: '9px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 700 }}>{label}</span>
+                    </div>
+                    <div style={{ height: '4px', background: '#1a1a1a', borderRadius: '2px', marginBottom: '8px' }}>
+                      <div style={{ height: '100%', width: `${(val / 5) * 100}%`, background: cor, borderRadius: '2px' }} />
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '10px', color: cor, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{LABELS[val]}</span>
+                      <span style={{ fontSize: '18px', fontWeight: 800, color: cor }}>{val}</span>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* FORMULÁRIO */}
         {mostrarForm && (
           <form onSubmit={guardarRegisto} style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '20px', marginBottom: '24px' }}>
-
-            {/* Título do formulário indica se é edição ou criação */}
             <p style={{ fontSize: '9px', color: editandoId ? '#a855f7' : '#3b82f6', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: '16px', fontWeight: 700 }}>
               {editandoId ? '✎ Editar Registo' : '+ Novo Registo'}
             </p>
@@ -277,7 +312,6 @@ export default function SessaoPage() {
                             style={{ background: 'none', border: 'none', color: '#444', fontSize: '18px', cursor: 'pointer' }}>×</button>
                         )}
                       </div>
-
                       <div style={{ display: 'flex', gap: '16px' }}>
                         <div style={{ flex: 1 }}>
                           <p style={{ fontSize: '8px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '8px', textAlign: 'center' }}>Reps</p>
@@ -287,7 +321,6 @@ export default function SessaoPage() {
                             <button type="button" {...holdProps(i, 'repeticoes', 1)} style={c.stepBtn}>+</button>
                           </div>
                         </div>
-
                         <div style={{ flex: 1 }}>
                           <p style={{ fontSize: '8px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '8px', textAlign: 'center' }}>Carga kg</p>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -327,6 +360,7 @@ export default function SessaoPage() {
           </form>
         )}
 
+        {/* LISTA DE REGISTOS */}
         {registos.length === 0 ? (
           <p style={{ fontSize: '11px', color: '#333', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Sem registos nesta sessão.</p>
         ) : (
@@ -362,27 +396,17 @@ export default function SessaoPage() {
                     )}
                     {r.notas && <p style={{ fontSize: '10px', color: '#444', textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: '8px' }}>{r.notas}</p>}
                   </div>
-
-                  {/* Botões de ação: editar + apagar */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginLeft: '16px' }}>
-                    <button
-                      onClick={() => iniciarEdicao(r)}
-                      style={{ background: 'none', border: 'none', color: '#3b3b3b', fontSize: '15px', cursor: 'pointer', padding: '4px 6px', borderRadius: '8px', transition: 'color 0.15s' }}
+                    <button onClick={() => iniciarEdicao(r)}
+                      style={{ background: 'none', border: 'none', color: '#3b3b3b', fontSize: '15px', cursor: 'pointer', padding: '4px 6px', borderRadius: '8px' }}
                       onMouseEnter={e => (e.currentTarget.style.color = '#6366f1')}
                       onMouseLeave={e => (e.currentTarget.style.color = '#3b3b3b')}
-                      aria-label="Editar"
-                    >
-                      ✎
-                    </button>
-                    <button
-                      onClick={() => apagarRegisto(r.id)}
-                      style={{ background: 'none', border: 'none', color: '#2a2a2a', fontSize: '20px', cursor: 'pointer', padding: '4px 6px', borderRadius: '8px', transition: 'color 0.15s' }}
+                      aria-label="Editar">✎</button>
+                    <button onClick={() => apagarRegisto(r.id)}
+                      style={{ background: 'none', border: 'none', color: '#2a2a2a', fontSize: '20px', cursor: 'pointer', padding: '4px 6px', borderRadius: '8px' }}
                       onMouseEnter={e => (e.currentTarget.style.color = '#ef4444')}
                       onMouseLeave={e => (e.currentTarget.style.color = '#2a2a2a')}
-                      aria-label="Apagar"
-                    >
-                      ×
-                    </button>
+                      aria-label="Apagar">×</button>
                   </div>
                 </div>
               </div>
