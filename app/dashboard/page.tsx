@@ -22,10 +22,10 @@ function useCountUp(target: number | null, duration = 1000) {
   return target === null ? null : value
 }
 
-const LANGS: { code: Locale; flag: string }[] = [
-  { code: 'pt', flag: '🇵🇹' },
-  { code: 'en', flag: '🇬🇧' },
-  { code: 'es', flag: '🇪🇸' },
+const LANGS: { code: Locale }[] = [
+  { code: 'pt' },
+  { code: 'en' },
+  { code: 'es' },
 ]
 
 export default function Dashboard() {
@@ -96,65 +96,43 @@ export default function Dashboard() {
       <div style={s.wrap}>
 
         {/* Header */}
-<div style={{ marginBottom: '28px', borderBottom: '1px solid #1a1a1a', paddingBottom: '24px' }}>
-  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '12px' }}>
-    <div>
-      <p style={{ color: '#3b82f6', fontSize: '10px', letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: '4px' }}>{hoje}</p>
-      <h1 style={{ fontSize: '30px', fontWeight: 800, color: '#fff', textTransform: 'uppercase', letterSpacing: '-0.01em', lineHeight: 1 }}>{t.hello}</h1>
-    </div>
+        <div style={{ marginBottom: '28px', borderBottom: '1px solid #1a1a1a', paddingBottom: '24px' }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '12px' }}>
+            <div>
+              <p style={{ color: '#3b82f6', fontSize: '10px', letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: '4px' }}>{hoje}</p>
+              <h1 style={{ fontSize: '30px', fontWeight: 800, color: '#fff', textTransform: 'uppercase', letterSpacing: '-0.01em', lineHeight: 1 }}>{t.hello}</h1>
+            </div>
 
-    {/* Idioma + Logout juntos */}
-    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
-      {LANGS.map(lang => {
-        const ativo = locale === lang.code
-        return (
-          <button key={lang.code} onClick={() => setLocale(lang.code)}
-            style={{
-              padding: '5px 10px', borderRadius: '20px', cursor: 'pointer',
-              background: ativo ? 'rgba(59,130,246,0.12)' : 'transparent',
-              border: ativo ? '1px solid rgba(59,130,246,0.3)' : '1px solid #1e1e1e',
-              fontSize: '9px', fontWeight: 700,
-              color: ativo ? '#3b82f6' : '#444',
-              textTransform: 'uppercase', letterSpacing: '0.1em',
-              transition: 'all 0.15s',
-            }}>
-            {lang.code.toUpperCase()}
-          </button>
-        )
-      })}
-
-      <div style={{ width: '1px', height: '16px', background: '#222', margin: '0 2px' }} />
-
-      <button onClick={logout}
-        style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', padding: '0' }}>
-        <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" />
-        </svg>
-        {t.logout}
-      </button>
-    </div>
-  </div>
-</div>
-          {/* Seletor de idioma */}
-          <div style={{ display: 'flex', gap: '6px' }}>
-            {LANGS.map(lang => {
-              const ativo = locale === lang.code
-              return (
-                <button key={lang.code} onClick={() => setLocale(lang.code)}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: '6px',
-                    padding: '5px 12px', borderRadius: '20px', cursor: 'pointer',
-                    background: ativo ? 'rgba(59,130,246,0.12)' : 'transparent',
-                    border: ativo ? '1px solid rgba(59,130,246,0.3)' : '1px solid #1e1e1e',
-                    transition: 'all 0.15s',
-                  }}>
-                  <span style={{ fontSize: '14px' }}>{lang.flag}</span>
-                  <span style={{ fontSize: '9px', fontWeight: 700, color: ativo ? '#3b82f6' : '#444', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+            {/* Idioma + Logout */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
+              {LANGS.map(lang => {
+                const ativo = locale === lang.code
+                return (
+                  <button key={lang.code} onClick={() => setLocale(lang.code)}
+                    style={{
+                      padding: '5px 10px', borderRadius: '20px', cursor: 'pointer',
+                      background: ativo ? 'rgba(59,130,246,0.12)' : 'transparent',
+                      border: ativo ? '1px solid rgba(59,130,246,0.3)' : '1px solid #1e1e1e',
+                      fontSize: '9px', fontWeight: 700,
+                      color: ativo ? '#3b82f6' : '#444',
+                      textTransform: 'uppercase', letterSpacing: '0.1em',
+                      transition: 'all 0.15s',
+                    }}>
                     {lang.code.toUpperCase()}
-                  </span>
-                </button>
-              )
-            })}
+                  </button>
+                )
+              })}
+
+              <div style={{ width: '1px', height: '16px', background: '#222', margin: '0 2px' }} />
+
+              <button onClick={logout}
+                style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', padding: '0' }}>
+                <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" />
+                </svg>
+                {t.logout}
+              </button>
+            </div>
           </div>
         </div>
 
