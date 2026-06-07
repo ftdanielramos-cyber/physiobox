@@ -58,8 +58,8 @@ export default function LoginPage() {
 
         .glow {
           position: absolute;
-          width: 500px;
-          height: 500px;
+          width: 600px;
+          height: 600px;
           border-radius: 50%;
           background: radial-gradient(ellipse, rgba(59,130,246,0.1) 0%, transparent 70%);
           top: 50%;
@@ -90,24 +90,38 @@ export default function LoginPage() {
           100% { top: 100%; opacity: 0; }
         }
 
-        .corner {
+        .side-bar {
           position: absolute;
-          width: 24px;
-          height: 24px;
-          border-color: rgba(59,130,246,0.4);
-          border-style: solid;
+          top: 50%;
+          transform: translateY(-50%);
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+          align-items: center;
         }
-        .corner-tl { top: 24px; left: 24px; border-width: 2px 0 0 2px; }
-        .corner-tr { top: 24px; right: 24px; border-width: 2px 2px 0 0; }
-        .corner-bl { bottom: 24px; left: 24px; border-width: 0 0 2px 2px; }
-        .corner-br { bottom: 24px; right: 24px; border-width: 0 2px 2px 0; }
+
+        .side-bar-left { left: 24px; }
+        .side-bar-right { right: 24px; }
+
+        .side-bar-item {
+          width: 2px;
+          height: 20px;
+          background: rgba(59,130,246,0.15);
+          border-radius: 1px;
+        }
+
+        .side-bar-item.active {
+          background: rgba(59,130,246,0.6);
+          height: 40px;
+        }
 
         .content {
           position: relative;
           z-index: 10;
           width: 100%;
-          max-width: 360px;
+          max-width: 340px;
           padding: 0 24px;
+          text-align: center;
           animation: fadeUp 0.8s ease forwards;
         }
 
@@ -118,44 +132,19 @@ export default function LoginPage() {
 
         .brand {
           font-family: 'Bebas Neue', sans-serif;
-          font-size: 48px;
+          font-size: clamp(60px, 14vw, 90px);
           color: #fff;
-          letter-spacing: 2px;
+          letter-spacing: -1px;
           line-height: 1;
-          margin-bottom: 4px;
+          margin-bottom: 40px;
           animation: fadeUp 0.8s ease 0.1s both;
         }
 
-        .brand-sub {
-          font-size: 9px;
-          color: #3b82f6;
-          letter-spacing: 0.3em;
-          text-transform: uppercase;
-          margin-bottom: 40px;
+        .field-wrap {
+          text-align: left;
+          margin-bottom: 16px;
           animation: fadeUp 0.8s ease 0.2s both;
         }
-
-        .form-panel {
-          background: rgba(255,255,255,0.02);
-          border: 1px solid rgba(59,130,246,0.15);
-          border-radius: 4px;
-          padding: 28px;
-          animation: fadeUp 0.8s ease 0.3s both;
-          position: relative;
-        }
-
-        /* Cantos do painel */
-        .panel-corner {
-          position: absolute;
-          width: 10px;
-          height: 10px;
-          border-color: rgba(59,130,246,0.6);
-          border-style: solid;
-        }
-        .panel-corner-tl { top: -1px; left: -1px; border-width: 2px 0 0 2px; }
-        .panel-corner-tr { top: -1px; right: -1px; border-width: 2px 2px 0 0; }
-        .panel-corner-bl { bottom: -1px; left: -1px; border-width: 0 0 2px 2px; }
-        .panel-corner-br { bottom: -1px; right: -1px; border-width: 0 2px 2px 0; }
 
         .field-label {
           font-size: 8px;
@@ -163,30 +152,31 @@ export default function LoginPage() {
           letter-spacing: 0.25em;
           text-transform: uppercase;
           margin-bottom: 8px;
+          display: block;
         }
 
         .field-input {
           width: 100%;
-          background: rgba(0,0,0,0.4);
-          border: 1px solid #1e1e2e;
+          background: rgba(255,255,255,0.03);
+          border: 1px solid #1a1a2e;
+          border-bottom: 1px solid #2a2a3e;
           border-radius: 2px;
-          padding: 12px 16px;
+          padding: 13px 16px;
           font-family: 'Space Mono', monospace;
           font-size: 12px;
           color: #fff;
-          letter-spacing: 0.1em;
+          letter-spacing: 0.08em;
           outline: none;
-          transition: border-color 0.2s, box-shadow 0.2s;
-          margin-bottom: 20px;
+          transition: border-color 0.2s, background 0.2s;
         }
 
         .field-input:focus {
           border-color: rgba(59,130,246,0.5);
-          box-shadow: 0 0 0 3px rgba(59,130,246,0.08);
+          background: rgba(59,130,246,0.04);
         }
 
         .field-input::placeholder {
-          color: #2a2a3a;
+          color: #222233;
         }
 
         .error-msg {
@@ -195,9 +185,11 @@ export default function LoginPage() {
           letter-spacing: 0.15em;
           text-transform: uppercase;
           margin-bottom: 16px;
+          text-align: left;
           display: flex;
           align-items: center;
           gap: 6px;
+          animation: fadeUp 0.3s ease both;
         }
 
         .error-msg::before {
@@ -219,7 +211,7 @@ export default function LoginPage() {
           color: #fff;
           border: none;
           border-radius: 2px;
-          padding: 14px;
+          padding: 15px;
           font-family: 'Space Mono', monospace;
           font-size: 11px;
           font-weight: 700;
@@ -229,6 +221,12 @@ export default function LoginPage() {
           position: relative;
           overflow: hidden;
           transition: all 0.2s;
+          margin-top: 8px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 10px;
+          animation: fadeUp 0.8s ease 0.3s both;
         }
 
         .btn-login::before {
@@ -241,9 +239,33 @@ export default function LoginPage() {
         }
 
         .btn-login:hover::before { transform: translateX(100%); }
-        .btn-login:hover { background: #2563eb; box-shadow: 0 4px 20px rgba(59,130,246,0.4); }
-        .btn-login:disabled { opacity: 0.5; cursor: not-allowed; }
-        .btn-login:disabled::before { display: none; }
+        .btn-login:hover { background: #2563eb; box-shadow: 0 4px 24px rgba(59,130,246,0.4); transform: translateY(-1px); }
+        .btn-login:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+        .hourglass {
+          display: inline-block;
+          animation: flipHourglass 1.4s ease-in-out infinite;
+        }
+
+        @keyframes flipHourglass {
+          0%, 45%   { transform: rotate(0deg); }
+          50%, 95%  { transform: rotate(180deg); }
+          100%      { transform: rotate(180deg); }
+        }
+
+        .back-link {
+          display: block;
+          margin-top: 20px;
+          font-size: 9px;
+          color: #2a2a3a;
+          letter-spacing: 0.2em;
+          text-transform: uppercase;
+          text-decoration: none;
+          transition: color 0.2s;
+          animation: fadeUp 0.8s ease 0.4s both;
+        }
+
+        .back-link:hover { color: #3b82f6; }
 
         .version {
           position: absolute;
@@ -251,11 +273,10 @@ export default function LoginPage() {
           left: 50%;
           transform: translateX(-50%);
           font-size: 8px;
-          color: #1a1a2e;
+          color: #111;
           letter-spacing: 0.2em;
           text-transform: uppercase;
           white-space: nowrap;
-          font-family: 'Space Mono', monospace;
         }
       `}</style>
 
@@ -264,54 +285,53 @@ export default function LoginPage() {
         <div className="glow" />
         <div className="scanline" />
 
-        <div className="corner corner-tl" />
-        <div className="corner corner-tr" />
-        <div className="corner corner-bl" />
-        <div className="corner corner-br" />
+        <div className="side-bar side-bar-left">
+          {[0,1,2,3,4].map(i => (
+            <div key={i} className={`side-bar-item ${i === 1 ? 'active' : ''}`} />
+          ))}
+        </div>
+        <div className="side-bar side-bar-right">
+          {[0,1,2,3,4].map(i => (
+            <div key={i} className={`side-bar-item ${i === 3 ? 'active' : ''}`} />
+          ))}
+        </div>
 
         <div className="content">
           <div className="brand">Physiobox</div>
-          <div className="brand-sub">Reabilitação & Performance</div>
 
           <form onSubmit={handleLogin}>
-            <div className="form-panel">
-              <div className="panel-corner panel-corner-tl" />
-              <div className="panel-corner panel-corner-tr" />
-              <div className="panel-corner panel-corner-bl" />
-              <div className="panel-corner panel-corner-br" />
-
-              <div>
-                <p className="field-label">Email</p>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={e => setEmail(e.target.value)}
-                  placeholder="email@exemplo.com"
-                  required
-                  className="field-input"
-                />
-              </div>
-
-              <div>
-                <p className="field-label">Password</p>
-                <input
-                  type="password"
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  required
-                  className="field-input"
-                  style={{ marginBottom: error ? '16px' : '4px' }}
-                />
-              </div>
-
-              {error && <div className="error-msg">{error}</div>}
-
-              <button type="submit" disabled={loading} className="btn-login">
-                {loading ? 'A verificar...' : 'Entrar'}
-              </button>
+            <div className="field-wrap">
+              <label className="field-label">Email</label>
+              <input
+                type="email"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                placeholder="email@exemplo.com"
+                required
+                className="field-input"
+              />
             </div>
+
+            <div className="field-wrap">
+              <label className="field-label">Password</label>
+              <input
+                type="password"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                placeholder="••••••••"
+                required
+                className="field-input"
+              />
+            </div>
+
+            {error && <div className="error-msg">{error}</div>}
+
+            <button type="submit" disabled={loading} className="btn-login">
+              {loading ? <span className="hourglass">⏳</span> : 'Entrar'}
+            </button>
           </form>
+
+          <a href="/" className="back-link">← Voltar</a>
         </div>
 
         <div className="version">PhysioBox v1.0 · 2025</div>
