@@ -16,6 +16,8 @@ export default function ClientePage() {
   const [cliente, setCliente] = useState<Cliente | null>(null)
   const [ficha, setFicha] = useState<Ficha | null>(null)
   const [sessoes, setSessoes] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [erro, setErro] = useState<string | null>(null)
   const [tab, setTab] = useState('visao')
   const [editandoContacto, setEditandoContacto] = useState(false)
   const [cNome, setCNome] = useState('')
@@ -32,20 +34,62 @@ export default function ClientePage() {
   useEffect(() => { carregarDados() }, [id])
 
   async function carregarDados() {
-    const { data: c } = await supabase.from('clientes').select('*').eq('id', id).single()
+    setLoading(true)
+    setErro(null)
+
+    const { data: c, error: erroCliente } = await supabase
+      .from('clientes').select('*').eq('id', id).single()
+
+    if (erroCliente) {
+      console.error('Erro ao carregar cliente:', erroCliente)
+      setErro(erroCliente.message)
+      setLoading(false)
+      return
+    }
+
     setCliente(c)
-    if (c) { setCNome(c.nome || ''); setCEmail(c.email || ''); setCTelefone(c.telefone || ''); setCDataNasc(c.data_nasc || '') }
-    const { data: f } = await supabase.from('fichas').select('*').eq('cliente_id', id).single()
-    if (f) { setFicha(f); setHistorico(f.historico_medico || ''); setPatologias(f.patologias || ''); setMedicacao(f.medicacao || ''); setObservacoes(f.observacoes || '') }
-    const { data: s } = await supabase.from('sessoes').select('*').eq('cliente_id', id).order('data', { ascending: false })
+    if (c) {
+      setCNome(c.nome || '')
+      setCEmail(c.email || '')
+      setCTelefone(c.telefone || '')
+      setCDataNasc(c.data_nasc || '')
+    }
+
+    const { data: f, error: erroFicha } = await supabase
+      .from('fichas').select('*').eq('cliente_id', id).single()
+
+    if (f) {
+      setFicha(f)
+      setHistorico(f.historico_medico || '')
+      setPatologias(f.patologias || '')
+      setMedicacao(f.medicacao || '')
+      setObservacoes(f.observacoes || '')
+    }
+    // erroFicha pode ser "PGRST116" (0 rows) — não é erro real, só significa que não há ficha ainda
+    if (erroFicha && erroFicha.code !== 'PGRST116') {
+      console.error('Erro ao carregar ficha:', erroFicha)
+    }
+
+    const { data: s, error: erroSessoes } = await supabase
+      .from('sessoes').select('*').eq('cliente_id', id).order('data', { ascending: false })
+
+    if (erroSessoes) {
+      console.error('Erro ao carregar sessões:', erroSessoes)
+    }
+
     setSessoes(s || [])
+    setLoading(false)
   }
 
   async function guardarContacto(e: React.FormEvent) {
     e.preventDefault()
-    const { error } = await supabase.from('clientes').update({ nome: cNome, email: cEmail || null, telefone: cTelefone || null, data_nasc: cDataNasc || null }).eq('id', id as string)
+    const { error } = await supabase
+      .from('clientes')
+      .update({ nome: cNome, email: cEmail || null, telefone: cTelefone || null, data_nasc: cDataNasc || null })
+      .eq('id', id as string)
     if (error) { alert(t.error + ': ' + error.message); return }
-    setEditandoContacto(false); carregarDados()
+    setEditandoContacto(false)
+    carregarDados()
   }
 
   async function guardarFicha(e: React.FormEvent) {
@@ -53,7 +97,8 @@ export default function ClientePage() {
     const dados = { historico_medico: historico, patologias, medicacao, observacoes, updated_at: new Date().toISOString() }
     if (ficha) { await supabase.from('fichas').update(dados).eq('id', ficha.id) }
     else { await supabase.from('fichas').insert({ ...dados, cliente_id: id }) }
-    setEditandoFicha(false); carregarDados()
+    setEditandoFicha(false)
+    carregarDados()
   }
 
   async function apagarSessao(sessaoId: string) {
@@ -72,9 +117,25 @@ export default function ClientePage() {
   const inputClass = "w-full bg-[#0d0d0d] border border-[#1e1e1e] rounded-lg px-4 py-3 text-sm text-white uppercase tracking-wider placeholder:text-[#333] focus:outline-none focus:border-[#3b82f6] resize-none"
   const labelClass = "block text-[9px] font-semibold text-[#444] uppercase tracking-[0.12em] mb-1.5"
 
-  if (!cliente) return (
+  if (loading) return (
     <main style={{ minHeight: '100vh', background: '#0a0a0a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <p style={{ color: '#333', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.1em' }}>{t.loading}</p>
+    </main>
+  )
+
+  if (erro) return (
+    <main style={{ minHeight: '100vh', background: '#0a0a0a', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '12px' }}>
+      <p style={{ color: '#ef4444', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Erro ao carregar cliente</p>
+      <p style={{ color: '#333', fontSize: '10px', letterSpacing: '0.05em' }}>{erro}</p>
+      <button onClick={carregarDados} style={{ marginTop: '8px', color: '#3b82f6', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.1em', background: 'none', border: 'none', cursor: 'pointer' }}>
+        Tentar novamente
+      </button>
+    </main>
+  )
+
+  if (!cliente) return (
+    <main style={{ minHeight: '100vh', background: '#0a0a0a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <p style={{ color: '#333', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Cliente não encontrado.</p>
     </main>
   )
 
