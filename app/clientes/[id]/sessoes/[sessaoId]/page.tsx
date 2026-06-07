@@ -55,7 +55,9 @@ const METRICAS = [
 ] as const
 
 export default function SessaoPage() {
-  const { id, sessaoId } = useParams()
+  const params = useParams()
+const id = Array.isArray(params.id) ? params.id[0] : params.id as string
+const sessaoId = Array.isArray(params.sessaoId) ? params.sessaoId[0] : params.sessaoId as string
   const router = useRouter()
   const [sessao, setSessao] = useState<Sessao | null>(null)
   const [registos, setRegistos] = useState<Registo[]>([])

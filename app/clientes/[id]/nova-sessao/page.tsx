@@ -17,7 +17,8 @@ const CORES = ['', '#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6']
 
 export default function NovaSessaoPage() {
   const { t } = useTranslation()
-  const { id } = useParams()
+  const params = useParams()
+const id = Array.isArray(params.id) ? params.id[0] : params.id as string
   const router = useRouter()
   const [data, setData] = useState('')
   const [hora, setHora] = useState('')
