@@ -21,7 +21,7 @@ export default function Voltar() {
       </button>
 
       {/* Atalho Dashboard */}
-      <button onClick={() => router.push('/')}
+      <button onClick={() => router.push('/dashboard')}
         style={{
           height: '40px', borderRadius: '12px', paddingLeft: '14px', paddingRight: '14px',
           background: '#141414', border: '1px solid #222',

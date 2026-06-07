@@ -425,7 +425,7 @@ export default function SessaoPage() {
       }}>
         <div style={{ maxWidth: '600px', margin: '0 auto' }}>
           <button
-            onClick={() => router.push('/')}
+            onClick={() => router.push('/dashboard')}
             style={{
               width: '100%', background: '#16a34a', color: '#fff',
               border: 'none', borderRadius: '14px', padding: '16px',
