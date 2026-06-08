@@ -260,8 +260,7 @@ export default function ModeloPage() {
       await supabase.from('avaliacoes').insert({
         cliente_id: clienteId,
         fisio_id: user?.id,
-        modelo_id: modeloIdNum,
-        modelo_nome: modelo.nome,
+        modelo: modelo.nome,
         respostas: respostas,
         data: new Date().toISOString().split('T')[0],
       })

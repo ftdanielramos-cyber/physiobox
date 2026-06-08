@@ -11,6 +11,7 @@ type Cliente = {
   data_nasc: string; peso: number | null; altura: number | null; foto_url: string | null
 }
 type Ficha = { id: string; historico_medico: string; patologias: string; medicacao: string; observacoes: string }
+type AvaliacaoFuncional = { id: string; modelo: string; data: string; respostas: Record<string, string> }
 
 function calcularIdade(dataNasc: string | null): number | null {
   if (!dataNasc) return null
@@ -46,6 +47,8 @@ export default function ClientePage() {
   const [uploadingFoto, setUploadingFoto] = useState(false)
   const [mesAtual, setMesAtual] = useState(new Date())
   const [sessaoSelecionada, setSessaoSelecionada] = useState<any | null>(null)
+  const [avaliacoes, setAvaliacoes] = useState<AvaliacaoFuncional[]>([])
+  const [avaliacaoAberta, setAvaliacaoAberta] = useState<AvaliacaoFuncional | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const supabase = createClient()
 
@@ -71,6 +74,8 @@ export default function ClientePage() {
       if (f) { setFicha(f); setHistorico(f.historico_medico || ''); setPatologias(f.patologias || ''); setMedicacao(f.medicacao || ''); setObservacoes(f.observacoes || '') }
       const { data: s } = await supabase.from('sessoes').select('*').eq('cliente_id', id).order('data', { ascending: false })
       setSessoes(s || [])
+      const { data: av } = await supabase.from('avaliacoes').select('*').eq('cliente_id', id).order('created_at', { ascending: false })
+      setAvaliacoes(av || [])
     } catch (e) { setErro(true) }
   }
 
@@ -274,6 +279,8 @@ export default function ClientePage() {
         {/* AVALIACAO */}
         {tab === 'avaliacao' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+
+            {/* Avaliacao Clinica */}
             <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '20px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: editandoFicha || dadosFicha.length > 0 ? '16px' : '0' }}>
                 <p style={{ fontSize: '9px', color: '#3b82f6', textTransform: 'uppercase', letterSpacing: '0.15em', fontWeight: 700 }}>Avaliacao Clinica</p>
@@ -300,6 +307,39 @@ export default function ClientePage() {
                 </div>
               ) : (
                 <p style={{ fontSize: '11px', color: '#333', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Sem avaliacao clinica. Clica em Adicionar para criar.</p>
+              )}
+            </div>
+
+            {/* Avaliacoes Funcionais */}
+            <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '20px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: avaliacoes.length > 0 ? '16px' : '0' }}>
+                <p style={{ fontSize: '9px', color: '#10b981', textTransform: 'uppercase', letterSpacing: '0.15em', fontWeight: 700 }}>Avaliacao Funcional</p>
+                <a href={`/avaliacoes?clienteId=${id}`} style={{ fontSize: '9px', color: '#10b981', textTransform: 'uppercase', letterSpacing: '0.1em', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 700, textDecoration: 'none' }}>
+                  + Nova
+                </a>
+              </div>
+              {avaliacoes.length === 0 ? (
+                <p style={{ fontSize: '11px', color: '#333', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Sem avaliacoes funcionais. Clica em Nova para iniciar.</p>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {avaliacoes.map(av => (
+                    <button key={av.id} onClick={() => setAvaliacaoAberta(av)}
+                      style={{ display: 'flex', alignItems: 'center', gap: '12px', background: '#0d0d0d', border: '1px solid #1e1e1e', borderRadius: '12px', padding: '14px 16px', cursor: 'pointer', textAlign: 'left', width: '100%', transition: 'border-color 0.15s' }}
+                      onMouseEnter={e => (e.currentTarget.style.borderColor = '#10b981')}
+                      onMouseLeave={e => (e.currentTarget.style.borderColor = '#1e1e1e')}>
+                      <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        <svg width="16" height="16" fill="none" stroke="#10b981" strokeWidth="2" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <p style={{ fontSize: '12px', fontWeight: 700, color: '#fff', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '3px' }}>{av.modelo}</p>
+                        <p style={{ fontSize: '10px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                          {av.data ? new Date(av.data + 'T00:00:00').toLocaleDateString('pt-PT', { day: 'numeric', month: 'long', year: 'numeric' }) : '--'}
+                        </p>
+                      </div>
+                      <svg width="14" height="14" fill="none" stroke="#333" strokeWidth="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+                    </button>
+                  ))}
+                </div>
               )}
             </div>
           </div>
@@ -451,6 +491,60 @@ export default function ClientePage() {
             Fechar
           </button>
         </div>
+      </div>
+
+      {/* POPUP AVALIACAO FUNCIONAL */}
+      {avaliacaoAberta && (
+        <div onClick={() => setAvaliacaoAberta(null)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(6px)', zIndex: 40 }} />
+      )}
+      <div style={{
+        position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 51,
+        transform: avaliacaoAberta ? 'translateY(0)' : 'translateY(100%)',
+        transition: 'transform 0.3s cubic-bezier(0.32, 0.72, 0, 1)',
+        background: '#111', borderTop: '1px solid #1e1e1e', borderRadius: '24px 24px 0 0',
+        maxHeight: '85vh', display: 'flex', flexDirection: 'column',
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '14px 0 0', flexShrink: 0 }}>
+          <div style={{ width: '36px', height: '4px', borderRadius: '2px', background: '#2a2a2a' }} />
+        </div>
+        {avaliacaoAberta && (
+          <>
+            <div style={{ padding: '20px 24px 0', flexShrink: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
+                <div>
+                  <p style={{ fontSize: '10px', color: '#10b981', textTransform: 'uppercase', letterSpacing: '0.15em', fontWeight: 700, marginBottom: '4px' }}>Avaliacao Funcional</p>
+                  <h2 style={{ fontSize: '18px', fontWeight: 800, color: '#fff', textTransform: 'uppercase', margin: 0 }}>{avaliacaoAberta.modelo}</h2>
+                  <p style={{ fontSize: '11px', color: '#555', marginTop: '4px', textTransform: 'uppercase' }}>
+                    {avaliacaoAberta.data ? new Date(avaliacaoAberta.data + 'T00:00:00').toLocaleDateString('pt-PT', { day: 'numeric', month: 'long', year: 'numeric' }) : '--'}
+                  </p>
+                </div>
+                <button onClick={() => setAvaliacaoAberta(null)}
+                  style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#1a1a1a', border: '1px solid #222', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#555', flexShrink: 0 }}>
+                  <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+              </div>
+            </div>
+            <div style={{ overflowY: 'auto', padding: '16px 24px 40px', flex: 1 }}>
+              {avaliacaoAberta.respostas && Object.keys(avaliacaoAberta.respostas).length > 0 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {Object.entries(avaliacaoAberta.respostas).map(([chave, valor]) => (
+                    valor ? (
+                      <div key={chave} style={{ background: '#0d0d0d', border: '1px solid #1e1e1e', borderRadius: '10px', padding: '12px 14px' }}>
+                        <p style={{ fontSize: '9px', color: '#444', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '4px' }}>
+                          {chave.replace(/_/g, ' ')}
+                        </p>
+                        <p style={{ fontSize: '13px', color: '#fff', fontWeight: 600 }}>{valor}</p>
+                      </div>
+                    ) : null
+                  ))}
+                </div>
+              ) : (
+                <p style={{ fontSize: '11px', color: '#333', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Sem respostas registadas.</p>
+              )}
+            </div>
+          </>
+        )}
       </div>
 
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
