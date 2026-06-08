@@ -149,35 +149,50 @@ export default function Exercicios() {
         </div>
       )}
 
-      {/* Modal vídeo */}
+      {/* Modal vídeo — abre YouTube diretamente */}
       {videoAberto && videoId && (
         <div onClick={() => setVideoAberto(null)}
-          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)', zIndex: 200, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.88)', backdropFilter: 'blur(8px)', zIndex: 200, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
           <div onClick={e => e.stopPropagation()}
-            style={{ width: '100%', maxWidth: videoIsShort ? '340px' : '600px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            style={{ width: '100%', maxWidth: '340px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px' }}>
 
-            {/* Header */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', marginBottom: '14px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <p style={{ color: '#fff', fontSize: '13px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{videoAberto.nome}</p>
-                {videoIsShort && <span style={{ fontSize: '8px', fontWeight: 800, color: '#ef4444', background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '20px', padding: '2px 8px', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Short</span>}
-              </div>
-              <button onClick={() => setVideoAberto(null)} style={{ background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#888', flexShrink: 0 }}>
-                <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
-              </button>
-            </div>
-
-            {/* Player — aspeto ratio dinâmico */}
-            <div style={{ position: 'relative', width: '100%', paddingBottom: videoIsShort ? '177.78%' : '56.25%', borderRadius: '16px', overflow: 'hidden', background: '#000' }}>
-              <iframe
-                src={`https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0${videoIsShort ? '&loop=1&playlist=' + videoId : ''}`}
-                style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none' }}
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
+            {/* Thumbnail */}
+            <div style={{ position: 'relative', width: '100%', borderRadius: '20px', overflow: 'hidden', background: '#000' }}>
+              <img
+                src={`https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`}
+                onError={e => { (e.target as HTMLImageElement).src = `https://img.youtube.com/vi/${videoId}/mqdefault.jpg` }}
+                alt={videoAberto.nome}
+                style={{ width: '100%', display: 'block', opacity: 0.7 }}
               />
+              <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(4px)', border: '2px solid rgba(255,255,255,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="#fff"><polygon points="5 3 19 12 5 21 5 3" /></svg>
+                </div>
+              </div>
+              {videoIsShort && (
+                <div style={{ position: 'absolute', top: '12px', left: '12px', background: '#ef4444', borderRadius: '6px', padding: '3px 8px', fontSize: '9px', fontWeight: 800, color: '#fff', letterSpacing: '0.08em' }}>SHORT</div>
+              )}
             </div>
 
-            {videoAberto.notas && <p style={{ color: '#3b82f6', fontSize: '12px', marginTop: '14px', lineHeight: 1.5, alignSelf: 'flex-start' }}>📝 {videoAberto.notas}</p>}
+            <div style={{ width: '100%', textAlign: 'center' }}>
+              <p style={{ color: '#fff', fontSize: '14px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '6px' }}>{videoAberto.nome}</p>
+              {videoAberto.notas && <p style={{ color: '#3b82f6', fontSize: '11px', lineHeight: 1.5 }}>📝 {videoAberto.notas}</p>}
+            </div>
+
+            <a
+              href={videoAberto.youtube_url || ''}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => setVideoAberto(null)}
+              style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', background: '#ef4444', color: '#fff', borderRadius: '14px', padding: '14px', fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.12em', textDecoration: 'none' }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.16 8.16 0 0 0 4.77 1.52V6.76a4.85 4.85 0 0 1-1-.07z"/></svg>
+              Abrir no YouTube
+            </a>
+
+            <button onClick={() => setVideoAberto(null)}
+              style={{ background: 'none', border: 'none', color: '#555', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', cursor: 'pointer' }}>
+              Fechar
+            </button>
           </div>
         </div>
       )}
