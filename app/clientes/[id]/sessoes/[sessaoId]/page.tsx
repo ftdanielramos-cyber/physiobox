@@ -10,6 +10,7 @@ type SetDB = { id: string; numero: number; repeticoes: number; carga: number }
 type Registo = { id: string; tipo: string; nome_exercicio: string; descricao: string; bilateral: boolean; lado: string; notas: string; sets?: SetDB[] }
 type Sessao = { id: string; data: string; hora: string; energia: number | null; sono: number | null; alimentacao: number | null; predisposicao: number | null }
 type Cliente = { nome: string; email: string | null }
+type ExercicioDB = { id: string; nome: string; categoria: string | null; descricao: string | null; notas: string | null; youtube_url: string | null }
 
 const CORES = ['', '#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6']
 const LABELS = ['', 'Muito Mau', 'Mau', 'Regular', 'Bom', 'Muito Bom']
@@ -19,6 +20,11 @@ const METRICAS = [
   { key: 'alimentacao' as const, label: 'Alimentação', emoji: '🥗' },
   { key: 'predisposicao' as const, label: 'Predisposição', emoji: '💪' },
 ]
+
+function getYoutubeId(url: string) {
+  const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/shorts\/)([^&?\s]+)/)
+  return match ? match[1] : null
+}
 
 export default function SessaoPage() {
   const params = useParams()
@@ -42,12 +48,19 @@ export default function SessaoPage() {
   const [emailReport, setEmailReport] = useState('')
   const [enviandoEmail, setEnviandoEmail] = useState(false)
   const [etapaPopup, setEtapaPopup] = useState<'opcoes' | 'email'>('opcoes')
+
+  // Base de dados de exercícios
+  const [mostrarBD, setMostrarBD] = useState(false)
+  const [exerciciosBD, setExerciciosBD] = useState<ExercicioDB[]>([])
+  const [filtroBD, setFiltroBD] = useState('')
+  const [loadingBD, setLoadingBD] = useState(false)
+
   const supabase = createClient()
   const holdRef = useRef<any>(null)
   const touchUsadoRef = useRef(false)
 
   useEffect(() => {
-    if (!sessaoId || !id) return  // ← guard
+    if (!sessaoId || !id) return
     carregarDados()
   }, [sessaoId])
 
@@ -59,6 +72,30 @@ export default function SessaoPage() {
     const { data: c } = await supabase.from('clientes').select('nome, email').eq('id', id).single()
     if (c) { setCliente(c); setEmailReport(c.email || '') }
   }
+
+  async function abrirBD() {
+    setMostrarBD(true)
+    setFiltroBD('')
+    if (exerciciosBD.length === 0) {
+      setLoadingBD(true)
+      const { data } = await supabase.from('exercicios').select('*').order('nome')
+      setExerciciosBD(data || [])
+      setLoadingBD(false)
+    }
+  }
+
+  function selecionarExercicioBD(ex: ExercicioDB) {
+    setNomeExercicio(ex.nome)
+    setTipo('exercicio')
+    if (ex.notas) setNotas(ex.notas)
+    setMostrarBD(false)
+    setMostrarForm(true)
+  }
+
+  const exerciciosFiltrados = exerciciosBD.filter(e =>
+    e.nome.toLowerCase().includes(filtroBD.toLowerCase()) ||
+    (e.categoria || '').toLowerCase().includes(filtroBD.toLowerCase())
+  )
 
   function adicionarSet() {
     const ultimo = sets[sets.length - 1]
@@ -148,6 +185,7 @@ export default function SessaoPage() {
   }
 
   const temQuestionario = sessao && (sessao.energia || sessao.sono || sessao.alimentacao || sessao.predisposicao)
+
   const c = {
     page: { minHeight: '100vh', background: '#0a0a0a', padding: '40px 16px 120px' } as React.CSSProperties,
     wrap: { maxWidth: '600px', margin: '0 auto' },
@@ -155,6 +193,7 @@ export default function SessaoPage() {
     label: { fontSize: '9px', color: '#555', textTransform: 'uppercase' as const, letterSpacing: '0.15em', marginBottom: '10px' },
     stepBtn: { width: '40px', height: '40px', borderRadius: '10px', background: '#1d1d1d', border: '1px solid #2a2a2a', color: '#fff', fontSize: '22px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, userSelect: 'none' as const, touchAction: 'manipulation' as const } as React.CSSProperties,
   }
+
   const tipoBtn = (ativo: boolean): React.CSSProperties => ({ flex: 1, padding: '16px', borderRadius: '14px', fontSize: '13px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', cursor: 'pointer', background: ativo ? '#1d4ed8' : '#0d0d0d', border: ativo ? '1px solid #2563eb' : '1px solid #1e1e1e', color: ativo ? '#fff' : '#666', transition: 'all 0.15s' })
   const ladoBtn = (ativo: boolean): React.CSSProperties => ({ flex: 1, padding: '10px', borderRadius: '10px', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', cursor: 'pointer', background: ativo ? '#1d4ed8' : '#0d0d0d', border: ativo ? '1px solid #2563eb' : '1px solid #1e1e1e', color: ativo ? '#fff' : '#666', transition: 'all 0.15s' })
   const holdProps = (index: number, campo: 'repeticoes' | 'carga', delta: number) => ({
@@ -168,17 +207,27 @@ export default function SessaoPage() {
     <main style={c.page}>
       <div style={c.wrap}>
         <Voltar />
+
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '28px', borderBottom: '1px solid #1a1a1a', paddingBottom: '24px' }}>
           <div>
             <h1 style={{ fontSize: '32px', fontWeight: 800, color: '#fff', textTransform: 'uppercase', letterSpacing: '-0.01em' }}>Sessão</h1>
             {sessao?.data && <p style={{ fontSize: '10px', color: '#444', textTransform: 'uppercase', letterSpacing: '0.1em', marginTop: '4px' }}>{new Date(sessao.data + 'T00:00:00').toLocaleDateString('pt-PT', { weekday: 'long', day: 'numeric', month: 'long' })}{sessao.hora ? ` · ${sessao.hora.slice(0, 5)}` : ''}</p>}
           </div>
-          <button onClick={() => mostrarForm && !editandoId ? cancelarForm() : (setMostrarForm(!mostrarForm), setEditandoId(null))}
-            style={{ width: '44px', height: '44px', borderRadius: '14px', background: mostrarForm ? '#1a1a1a' : '#1d4ed8', border: mostrarForm ? '1px solid #2a2a2a' : 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#fff', flexShrink: 0 }}>
-            <svg width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24" style={{ transform: mostrarForm ? 'rotate(45deg)' : 'none', transition: 'transform 0.15s' }}>
-              <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
-          </button>
+
+          {/* Botões: Base de Dados + Novo registo */}
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button onClick={abrirBD}
+              style={{ height: '44px', borderRadius: '14px', background: '#0d0d0d', border: '1px solid #1e1e1e', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', cursor: 'pointer', color: '#3b82f6', padding: '0 12px', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', flexShrink: 0 }}>
+              <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4.03 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4.03 3 9 3s9-1.34 9-3"/></svg>
+              BD
+            </button>
+            <button onClick={() => mostrarForm && !editandoId ? cancelarForm() : (setMostrarForm(!mostrarForm), setEditandoId(null))}
+              style={{ width: '44px', height: '44px', borderRadius: '14px', background: mostrarForm ? '#1a1a1a' : '#1d4ed8', border: mostrarForm ? '1px solid #2a2a2a' : 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#fff', flexShrink: 0 }}>
+              <svg width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24" style={{ transform: mostrarForm ? 'rotate(45deg)' : 'none', transition: 'transform 0.15s' }}>
+                <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
+            </button>
+          </div>
         </div>
 
         {temQuestionario && (
@@ -309,6 +358,7 @@ export default function SessaoPage() {
         )}
       </div>
 
+      {/* BOTÃO TERMINAR */}
       <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, padding: '16px', paddingBottom: 'calc(16px + env(safe-area-inset-bottom))', background: 'linear-gradient(to top, #0a0a0a 60%, transparent)', zIndex: 30 }}>
         <div style={{ maxWidth: '600px', margin: '0 auto' }}>
           <button onClick={() => { setEtapaPopup('opcoes'); setMostrarPopupTerminar(true) }}
@@ -319,8 +369,79 @@ export default function SessaoPage() {
         </div>
       </div>
 
-      {mostrarPopupTerminar && <div onClick={() => setMostrarPopupTerminar(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(6px)', zIndex: 40 }} />}
+      {/* BACKDROP BD */}
+      {mostrarBD && <div onClick={() => setMostrarBD(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(6px)', zIndex: 40 }} />}
 
+      {/* POPUP BASE DE DADOS */}
+      <div style={{
+        position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 50,
+        transform: mostrarBD ? 'translateY(0)' : 'translateY(100%)',
+        transition: 'transform 0.3s cubic-bezier(0.32, 0.72, 0, 1)',
+        background: '#111', borderTop: '1px solid #1e1e1e', borderRadius: '24px 24px 0 0',
+        maxHeight: '85vh', display: 'flex', flexDirection: 'column',
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '14px 0 0' }}>
+          <div style={{ width: '36px', height: '4px', borderRadius: '2px', background: '#2a2a2a' }} />
+        </div>
+        <div style={{ padding: '20px 24px 0', flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+            <div>
+              <p style={{ fontSize: '10px', color: '#3b82f6', textTransform: 'uppercase', letterSpacing: '0.15em', fontWeight: 700, marginBottom: '4px' }}>Base de Dados</p>
+              <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#fff', textTransform: 'uppercase', margin: 0 }}>Escolher Exercício</h2>
+            </div>
+            <button onClick={() => setMostrarBD(false)} style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#1a1a1a', border: '1px solid #222', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#555' }}>
+              <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+          {/* Pesquisa */}
+          <div style={{ position: 'relative', marginBottom: '16px' }}>
+            <svg width="14" height="14" fill="none" stroke="#444" strokeWidth="2" viewBox="0 0 24 24" style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)' }}>
+              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <input
+              value={filtroBD}
+              onChange={e => setFiltroBD(e.target.value)}
+              placeholder="Pesquisar exercício..."
+              autoFocus
+              style={{ width: '100%', background: '#0d0d0d', border: '1px solid #1e1e1e', borderRadius: '12px', padding: '12px 16px 12px 40px', fontSize: '14px', color: '#fff', outline: 'none', boxSizing: 'border-box' as const }}
+            />
+          </div>
+        </div>
+
+        {/* Lista scrollável */}
+        <div style={{ overflowY: 'auto', padding: '0 24px 40px', flex: 1 }}>
+          {loadingBD ? (
+            <p style={{ color: '#444', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.1em', textAlign: 'center', padding: '20px 0' }}>A carregar...</p>
+          ) : exerciciosFiltrados.length === 0 ? (
+            <p style={{ color: '#333', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.1em', textAlign: 'center', padding: '20px 0' }}>Nenhum exercício encontrado.</p>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {exerciciosFiltrados.map(ex => {
+                const ytId = ex.youtube_url ? getYoutubeId(ex.youtube_url) : null
+                return (
+                  <button key={ex.id} onClick={() => selecionarExercicioBD(ex)}
+                    style={{ display: 'flex', alignItems: 'center', gap: '12px', background: '#0d0d0d', border: '1px solid #1e1e1e', borderRadius: '14px', padding: '14px 16px', cursor: 'pointer', textAlign: 'left', width: '100%', transition: 'border-color 0.15s' }}
+                    onMouseEnter={e => (e.currentTarget.style.borderColor = '#3b82f6')}
+                    onMouseLeave={e => (e.currentTarget.style.borderColor = '#1e1e1e')}>
+                    {/* Thumbnail pequena */}
+                    <div style={{ width: '44px', height: '36px', borderRadius: '8px', flexShrink: 0, background: ytId ? `url(https://img.youtube.com/vi/${ytId}/mqdefault.jpg) center/cover` : '#1a1a1a', border: '1px solid #2a2a2a', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                      {!ytId && <svg width="16" height="16" fill="none" stroke="#333" strokeWidth="1.5" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/></svg>}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ fontSize: '13px', fontWeight: 700, color: '#fff', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '3px' }}>{ex.nome}</p>
+                      {ex.categoria && <span style={{ fontSize: '9px', fontWeight: 700, color: '#3b82f6', background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.2)', borderRadius: '20px', padding: '2px 8px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{ex.categoria}</span>}
+                    </div>
+                    <svg width="16" height="16" fill="none" stroke="#2a2a2a" strokeWidth="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+                  </button>
+                )
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* POPUP TERMINAR */}
+      {mostrarPopupTerminar && <div onClick={() => setMostrarPopupTerminar(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(6px)', zIndex: 40 }} />}
       <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 50, transform: mostrarPopupTerminar ? 'translateY(0)' : 'translateY(100%)', transition: 'transform 0.3s cubic-bezier(0.32, 0.72, 0, 1)', background: '#111', borderTop: '1px solid #1e1e1e', borderRadius: '24px 24px 0 0' }}>
         <div style={{ display: 'flex', justifyContent: 'center', padding: '14px 0 0' }}>
           <div style={{ width: '36px', height: '4px', borderRadius: '2px', background: '#2a2a2a' }} />
