@@ -12,15 +12,14 @@ type Cliente = {
 }
 type Ficha = { id: string; historico_medico: string; patologias: string; medicacao: string; observacoes: string }
 
-function calcularIMC(peso: number | null, altura: number | null): { valor: string; label: string; cor: string } | null {
-  if (!peso || !altura) return null
-  const alturaM = altura / 100
-  const imc = peso / (alturaM * alturaM)
-  const valor = imc.toFixed(1)
-  if (imc < 18.5) return { valor, label: 'Abaixo do Peso', cor: '#f59e0b' }
-  if (imc < 25) return { valor, label: 'Peso Normal', cor: '#10b981' }
-  if (imc < 30) return { valor, label: 'Excesso de Peso', cor: '#f97316' }
-  return { valor, label: 'Obesidade', cor: '#ef4444' }
+function calcularIdade(dataNasc: string | null): number | null {
+  if (!dataNasc) return null
+  const nasc = new Date(dataNasc)
+  const hoje = new Date()
+  let idade = hoje.getFullYear() - nasc.getFullYear()
+  const m = hoje.getMonth() - nasc.getMonth()
+  if (m < 0 || (m === 0 && hoje.getDate() < nasc.getDate())) idade--
+  return idade
 }
 
 export default function ClientePage() {
@@ -31,13 +30,13 @@ export default function ClientePage() {
   const [sessoes, setSessoes] = useState<any[]>([])
   const [tab, setTab] = useState('visao')
   const [editandoContacto, setEditandoContacto] = useState(false)
+  const [editandoFicha, setEditandoFicha] = useState(false)
   const [cNome, setCNome] = useState('')
   const [cEmail, setCEmail] = useState('')
   const [cTelefone, setCTelefone] = useState('')
   const [cDataNasc, setCDataNasc] = useState('')
   const [cPeso, setCPeso] = useState('')
   const [cAltura, setCAltura] = useState('')
-  const [editandoFicha, setEditandoFicha] = useState(false)
   const [historico, setHistorico] = useState('')
   const [patologias, setPatologias] = useState('')
   const [medicacao, setMedicacao] = useState('')
@@ -52,10 +51,7 @@ export default function ClientePage() {
     setId(resolvedId)
   }, [rawParams])
 
-  useEffect(() => {
-    if (!id) return
-    carregarDados()
-  }, [id])
+  useEffect(() => { if (!id) return; carregarDados() }, [id])
 
   async function carregarDados() {
     try {
@@ -81,7 +77,7 @@ export default function ClientePage() {
       peso: cPeso ? parseFloat(cPeso) : null,
       altura: cAltura ? parseFloat(cAltura) : null,
     }).eq('id', id)
-    if (error) { alert('Erro ao atualizar: ' + error.message); return }
+    if (error) { alert('Erro: ' + error.message); return }
     setEditandoContacto(false); carregarDados()
   }
 
@@ -108,7 +104,7 @@ export default function ClientePage() {
   const inputClass = "w-full bg-[#0d0d0d] border border-[#1e1e1e] rounded-lg px-4 py-3 text-sm text-white uppercase tracking-wider placeholder:text-[#333] focus:outline-none focus:border-[#3b82f6] resize-none"
   const labelClass = "block text-[9px] font-semibold text-[#444] uppercase tracking-[0.12em] mb-1.5"
 
-  const imc = cliente ? calcularIMC(cliente.peso, cliente.altura) : null
+  const idade = cliente ? calcularIdade(cliente.data_nasc) : null
 
   if (erro) return (
     <main style={{ minHeight: '100vh', background: '#0a0a0a', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '16px' }}>
@@ -122,6 +118,28 @@ export default function ClientePage() {
       <p style={{ color: '#333', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.1em' }}>A carregar...</p>
     </main>
   )
+
+  // métricas preenchidas: idade, peso, altura
+  const metricas = [
+    idade !== null ? { label: 'Idade', valor: String(idade), unidade: 'anos', cor: '#3b82f6' } : null,
+    cliente.peso ? { label: 'Peso', valor: String(cliente.peso), unidade: 'kg', cor: '#8b5cf6' } : null,
+    cliente.altura ? { label: 'Altura', valor: String(cliente.altura), unidade: 'cm', cor: '#10b981' } : null,
+  ].filter(Boolean) as { label: string; valor: string; unidade: string; cor: string }[]
+
+  // dados contacto preenchidos
+  const dadosContacto = [
+    cliente.email ? { label: 'Email', valor: cliente.email } : null,
+    cliente.telefone ? { label: 'Telefone', valor: cliente.telefone } : null,
+    cliente.data_nasc ? { label: 'Data Nascimento', valor: new Date(cliente.data_nasc + 'T00:00:00').toLocaleDateString('pt-PT') } : null,
+  ].filter(Boolean) as { label: string; valor: string }[]
+
+  // dados ficha preenchidos
+  const dadosFicha = ficha ? [
+    ficha.historico_medico ? { label: 'Historico Medico', valor: ficha.historico_medico } : null,
+    ficha.patologias ? { label: 'Patologias', valor: ficha.patologias } : null,
+    ficha.medicacao ? { label: 'Medicacao', valor: ficha.medicacao } : null,
+    ficha.observacoes ? { label: 'Observacoes', valor: ficha.observacoes } : null,
+  ].filter(Boolean) as { label: string; valor: string }[] : []
 
   return (
     <main className="min-h-screen bg-[#0a0a0a] pb-24">
@@ -148,10 +166,12 @@ export default function ClientePage() {
                   <p style={{ fontSize: '10px', color: '#444', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Total de Sessoes</p>
                   <p style={{ fontSize: '10px', color: '#fff', fontWeight: 700 }}>{sessoes.length}</p>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <p style={{ fontSize: '10px', color: '#444', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Ultima Sessao</p>
-                  <p style={{ fontSize: '10px', color: '#fff', fontWeight: 700 }}>{sessoes.length > 0 ? new Date(sessoes[0].data + 'T00:00:00').toLocaleDateString('pt-PT') : '--'}</p>
-                </div>
+                {sessoes.length > 0 && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <p style={{ fontSize: '10px', color: '#444', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Ultima Sessao</p>
+                    <p style={{ fontSize: '10px', color: '#fff', fontWeight: 700 }}>{new Date(sessoes[0].data + 'T00:00:00').toLocaleDateString('pt-PT')}</p>
+                  </div>
+                )}
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                   <p style={{ fontSize: '10px', color: '#444', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Ficha Clinica</p>
                   <p style={{ fontSize: '10px', color: ficha ? '#3b82f6' : '#444', fontWeight: 700 }}>{ficha ? 'Completa' : 'Por preencher'}</p>
@@ -169,65 +189,32 @@ export default function ClientePage() {
         {tab === 'perfil' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
 
-            {/* PESO + ALTURA — card de destaque */}
-            <div style={{ background: '#0d1117', border: '1px solid #1e3a5f', borderRadius: '20px', padding: '20px', position: 'relative', overflow: 'hidden' }}>
-              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', background: 'linear-gradient(90deg, #3b82f6, #8b5cf6, transparent)' }} />
-              <p style={{ fontSize: '9px', color: '#3b82f6', textTransform: 'uppercase', letterSpacing: '0.15em', fontWeight: 700, marginBottom: '16px' }}>Composicao Corporal</p>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: imc ? '16px' : '0' }}>
-                {/* Peso */}
-                <div style={{ background: '#111', border: '1px solid #1a2a3a', borderRadius: '14px', padding: '16px' }}>
-                  <p style={{ fontSize: '9px', color: '#3b82f6', textTransform: 'uppercase', letterSpacing: '0.12em', fontWeight: 700, marginBottom: '8px' }}>Peso</p>
-                  {cliente.peso ? (
-                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
-                      <span style={{ fontSize: '32px', fontWeight: 900, color: '#fff', lineHeight: 1 }}>{cliente.peso}</span>
-                      <span style={{ fontSize: '12px', color: '#444', fontWeight: 600 }}>kg</span>
+            {/* METRICAS — só aparecem se preenchidas */}
+            {metricas.length > 0 && (
+              <div style={{ display: 'grid', gridTemplateColumns: `repeat(${metricas.length}, 1fr)`, gap: '10px' }}>
+                {metricas.map(m => (
+                  <div key={m.label} style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '16px', position: 'relative', overflow: 'hidden' }}>
+                    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', background: m.cor, opacity: 0.6 }} />
+                    <p style={{ fontSize: '9px', color: '#444', textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: '10px' }}>{m.label}</p>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '3px' }}>
+                      <span style={{ fontSize: '28px', fontWeight: 900, color: '#fff', lineHeight: 1 }}>{m.valor}</span>
+                      <span style={{ fontSize: '11px', color: '#444', fontWeight: 600 }}>{m.unidade}</span>
                     </div>
-                  ) : (
-                    <p style={{ fontSize: '13px', color: '#333', fontWeight: 700 }}>--</p>
-                  )}
-                </div>
-
-                {/* Altura */}
-                <div style={{ background: '#111', border: '1px solid #1a2a3a', borderRadius: '14px', padding: '16px' }}>
-                  <p style={{ fontSize: '9px', color: '#8b5cf6', textTransform: 'uppercase', letterSpacing: '0.12em', fontWeight: 700, marginBottom: '8px' }}>Altura</p>
-                  {cliente.altura ? (
-                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
-                      <span style={{ fontSize: '32px', fontWeight: 900, color: '#fff', lineHeight: 1 }}>{cliente.altura}</span>
-                      <span style={{ fontSize: '12px', color: '#444', fontWeight: 600 }}>cm</span>
-                    </div>
-                  ) : (
-                    <p style={{ fontSize: '13px', color: '#333', fontWeight: 700 }}>--</p>
-                  )}
-                </div>
-              </div>
-
-              {/* IMC */}
-              {imc && (
-                <div style={{ background: `${imc.cor}10`, border: `1px solid ${imc.cor}30`, borderRadius: '12px', padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <div>
-                    <p style={{ fontSize: '9px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: '4px' }}>IMC</p>
-                    <p style={{ fontSize: '22px', fontWeight: 900, color: imc.cor, lineHeight: 1 }}>{imc.valor}</p>
                   </div>
-                  <span style={{ fontSize: '10px', fontWeight: 800, color: imc.cor, textTransform: 'uppercase', letterSpacing: '0.1em', background: `${imc.cor}18`, border: `1px solid ${imc.cor}40`, padding: '6px 14px', borderRadius: '20px' }}>
-                    {imc.label}
-                  </span>
-                </div>
-              )}
+                ))}
+              </div>
+            )}
 
-              {!cliente.peso && !cliente.altura && (
-                <p style={{ fontSize: '11px', color: '#333', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Sem dados antropometricos. Edita o contacto para adicionar.</p>
-              )}
-            </div>
-
-            {/* CONTACTO */}
+            {/* INFORMACOES */}
             <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '20px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                <p style={{ fontSize: '9px', color: '#3b82f6', textTransform: 'uppercase', letterSpacing: '0.15em', fontWeight: 700 }}>Contacto</p>
-                <button onClick={() => setEditandoContacto(!editandoContacto)} style={{ fontSize: '9px', color: editandoContacto ? '#ef4444' : '#555', textTransform: 'uppercase', letterSpacing: '0.1em', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 700 }}>
-                  {editandoContacto ? 'Cancelar' : 'Editar'}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: editandoContacto || dadosContacto.length > 0 ? '16px' : '0' }}>
+                <p style={{ fontSize: '9px', color: '#3b82f6', textTransform: 'uppercase', letterSpacing: '0.15em', fontWeight: 700 }}>Informacoes</p>
+                <button onClick={() => setEditandoContacto(!editandoContacto)}
+                  style={{ fontSize: '9px', color: editandoContacto ? '#ef4444' : '#555', textTransform: 'uppercase', letterSpacing: '0.1em', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 700 }}>
+                  {editandoContacto ? 'Cancelar' : 'Editar Informacoes'}
                 </button>
               </div>
+
               {editandoContacto ? (
                 <form onSubmit={guardarContacto} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   <div><label className={labelClass}>Nome Completo *</label><input value={cNome} onChange={e => setCNome(e.target.value)} required className={inputClass} /></div>
@@ -235,42 +222,35 @@ export default function ClientePage() {
                   <div><label className={labelClass}>Telefone</label><input value={cTelefone} onChange={e => setCTelefone(e.target.value)} className={inputClass} /></div>
                   <div><label className={labelClass}>Data de Nascimento</label><input value={cDataNasc} onChange={e => setCDataNasc(e.target.value)} type="date" className={inputClass} /></div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                    <div>
-                      <label className={labelClass}>Peso (kg)</label>
-                      <input value={cPeso} onChange={e => setCPeso(e.target.value)} type="number" step="0.1" min="0" max="300" placeholder="70.5" className={inputClass} />
-                    </div>
-                    <div>
-                      <label className={labelClass}>Altura (cm)</label>
-                      <input value={cAltura} onChange={e => setCAltura(e.target.value)} type="number" step="0.1" min="0" max="250" placeholder="175" className={inputClass} />
-                    </div>
+                    <div><label className={labelClass}>Peso (kg)</label><input value={cPeso} onChange={e => setCPeso(e.target.value)} type="number" step="0.1" min="0" placeholder="70.5" className={inputClass} /></div>
+                    <div><label className={labelClass}>Altura (cm)</label><input value={cAltura} onChange={e => setCAltura(e.target.value)} type="number" step="0.1" min="0" placeholder="175" className={inputClass} /></div>
                   </div>
-                  <button type="submit" style={{ background: '#7c3aed', color: '#fff', border: 'none', borderRadius: '10px', padding: '10px 16px', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', cursor: 'pointer', marginTop: '4px' }}>Guardar Alteracoes</button>
+                  <button type="submit" style={{ background: '#7c3aed', color: '#fff', border: 'none', borderRadius: '10px', padding: '10px 16px', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', cursor: 'pointer', marginTop: '4px' }}>Guardar</button>
                 </form>
-              ) : (
+              ) : dadosContacto.length > 0 ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  {[
-                    { label: 'Nome', valor: cliente.nome },
-                    { label: 'Email', valor: cliente.email },
-                    { label: 'Telefone', valor: cliente.telefone },
-                    { label: 'Data Nascimento', valor: cliente.data_nasc ? new Date(cliente.data_nasc + 'T00:00:00').toLocaleDateString('pt-PT') : null },
-                  ].map(item => (
+                  {dadosContacto.map(item => (
                     <div key={item.label}>
                       <p style={{ fontSize: '9px', color: '#444', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '4px' }}>{item.label}</p>
-                      <p style={{ fontSize: '13px', color: item.valor ? '#fff' : '#333', fontWeight: 700, textTransform: 'uppercase' }}>{item.valor || '--'}</p>
+                      <p style={{ fontSize: '13px', color: '#fff', fontWeight: 700, textTransform: 'uppercase' }}>{item.valor}</p>
                     </div>
                   ))}
                 </div>
+              ) : (
+                <p style={{ fontSize: '11px', color: '#333', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Sem informacoes. Clica em Editar para adicionar.</p>
               )}
             </div>
 
             {/* FICHA CLINICA */}
             <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '20px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                <p style={{ fontSize: '9px', color: '#3b82f6', textTransform: 'uppercase', letterSpacing: '0.15em', fontWeight: 700 }}>Ficha Clinica</p>
-                <button onClick={() => setEditandoFicha(!editandoFicha)} style={{ fontSize: '9px', color: editandoFicha ? '#ef4444' : '#555', textTransform: 'uppercase', letterSpacing: '0.1em', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 700 }}>
-                  {editandoFicha ? 'Cancelar' : ficha ? 'Editar' : '+ Adicionar'}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: editandoFicha || dadosFicha.length > 0 ? '16px' : '0' }}>
+                <p style={{ fontSize: '9px', color: '#3b82f6', textTransform: 'uppercase', letterSpacing: '0.15em', fontWeight: 700 }}>Avaliacao Clinica</p>
+                <button onClick={() => setEditandoFicha(!editandoFicha)}
+                  style={{ fontSize: '9px', color: editandoFicha ? '#ef4444' : '#555', textTransform: 'uppercase', letterSpacing: '0.1em', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 700 }}>
+                  {editandoFicha ? 'Cancelar' : ficha ? 'Editar Avaliacao' : '+ Adicionar Avaliacao'}
                 </button>
               </div>
+
               {editandoFicha ? (
                 <form onSubmit={guardarFicha} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   <div><label className={labelClass}>Historico Medico</label><textarea value={historico} onChange={e => setHistorico(e.target.value)} rows={3} className={inputClass} /></div>
@@ -279,14 +259,9 @@ export default function ClientePage() {
                   <div><label className={labelClass}>Observacoes</label><textarea value={observacoes} onChange={e => setObservacoes(e.target.value)} rows={3} className={inputClass} /></div>
                   <button type="submit" style={{ background: '#7c3aed', color: '#fff', border: 'none', borderRadius: '10px', padding: '10px 16px', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', cursor: 'pointer', marginTop: '4px' }}>Guardar</button>
                 </form>
-              ) : ficha ? (
+              ) : dadosFicha.length > 0 ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  {[
-                    { label: 'Historico Medico', valor: ficha.historico_medico },
-                    { label: 'Patologias', valor: ficha.patologias },
-                    { label: 'Medicacao', valor: ficha.medicacao },
-                    { label: 'Observacoes', valor: ficha.observacoes },
-                  ].filter(i => i.valor).map(item => (
+                  {dadosFicha.map(item => (
                     <div key={item.label}>
                       <p style={{ fontSize: '9px', color: '#444', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '4px' }}>{item.label}</p>
                       <p style={{ fontSize: '13px', color: '#aaa', textTransform: 'uppercase' }}>{item.valor}</p>
@@ -294,7 +269,7 @@ export default function ClientePage() {
                   ))}
                 </div>
               ) : (
-                <p style={{ fontSize: '11px', color: '#333', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Sem ficha clinica ainda.</p>
+                <p style={{ fontSize: '11px', color: '#333', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Sem avaliacao clinica. Clica em Adicionar para criar.</p>
               )}
             </div>
           </div>
