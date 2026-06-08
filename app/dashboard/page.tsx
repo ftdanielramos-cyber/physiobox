@@ -182,7 +182,7 @@ export default function Dashboard() {
               <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at 50% 0%, rgba(59,130,246,0.06) 0%, transparent 70%)', pointerEvents: 'none' }} />
               <div style={{ color: '#3b82f6', opacity: 0.6 }}>{st.icon}</div>
               <p style={{ fontSize: '36px', fontWeight: 800, color: '#fff', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{st.valor ?? '—'}</p>
-              <p style={{ fontSize: '9px', color: '#555', letterSpacing: '0.14em', textTransform: 'uppercase' }}>{st.label}</p>
+              <p style={{ fontSize: '11px', color: '#666', letterSpacing: '0.08em', textTransform: 'uppercase', fontWeight: 600 }}>{st.label}</p>
             </div>
           ))}
         </div>
