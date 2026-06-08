@@ -34,7 +34,7 @@ export default function Dashboard() {
   const [sessoesHoje, setSessoesHoje] = useState<number | null>(null)
   const [sessoesMes, setSessoesMes] = useState<number | null>(null)
   const [proximos, setProximos] = useState<any[]>([])
-  const [sessoes48h, setSessoes48h] = useState<any[]>([])
+  const [sessoes24h, setSessoes24h] = useState<any[]>([])
   const [langOpen, setLangOpen] = useState(false)
   const langRef = useRef<HTMLDivElement>(null)
   const supabase = createClient()
@@ -81,19 +81,19 @@ export default function Dashboard() {
       }).slice(0, 3)
       setProximos(filtrados)
 
-      // Sessoes das ultimas 48h
+      // Sessoes das ultimas 24h
       const agora = new Date()
-      const h48atras = new Date(agora.getTime() - 48 * 60 * 60 * 1000)
-      const dataMin = h48atras.toISOString().split('T')[0]
-      const { data: s48 } = await supabase
+      const h24atras = new Date(agora.getTime() - 24 * 60 * 60 * 1000)
+      const dataMin = h24atras.toISOString().split('T')[0]
+      const { data: s24 } = await supabase
         .from('sessoes')
         .select('*, clientes(nome)')
         .gte('data', dataMin)
         .lte('data', hoje)
         .order('data', { ascending: false })
         .order('hora', { ascending: false })
-        .limit(10)
-      setSessoes48h(s48 || [])
+        .limit(8)
+      setSessoes24h(s24 || [])
     }
     carregarStats()
   }, [])
@@ -120,7 +120,6 @@ export default function Dashboard() {
     { valor: animMes, label: t.thisMonth, icon: (<svg width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg>) },
   ]
 
-  // label relativo de tempo
   function tempoRelativo(data: string, hora: string | null): string {
     const agora = new Date()
     const dataSessao = new Date(data + 'T' + (hora ? hora.slice(0, 5) : '00:00') + ':00')
@@ -146,9 +145,9 @@ export default function Dashboard() {
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
               <div ref={langRef} style={{ position: 'relative' }}>
                 <button onClick={() => setLangOpen(o => !o)}
-                  style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '5px 10px', borderRadius: '20px', cursor: 'pointer', background: 'transparent', border: '1px solid #1e1e1e', fontSize: '9px', fontWeight: 700, color: '#444', textTransform: 'uppercase', letterSpacing: '0.1em', transition: 'all 0.15s' }}>
+                  style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '5px 10px', borderRadius: '20px', cursor: 'pointer', background: 'transparent', border: '1px solid #1e1e1e', fontSize: '9px', fontWeight: 700, color: '#444', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
                   {locale.toUpperCase()}
-                  <svg width="8" height="8" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24" style={{ transition: 'transform 0.15s', transform: langOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}>
+                  <svg width="8" height="8" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24" style={{ transform: langOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}>
                     <polyline points="6 9 12 15 18 9" />
                   </svg>
                 </button>
@@ -188,36 +187,6 @@ export default function Dashboard() {
           ))}
         </div>
 
-        {/* Sessoes 48h */}
-        {sessoes48h.length > 0 && (
-          <div style={{ marginBottom: '32px' }}>
-            <p style={s.sectionLbl}>Ultimas 48h</p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {sessoes48h.map((s48: any) => (
-                <a key={s48.id} href={`/clientes/${s48.cliente_id}/sessoes/${s48.id}`}
-                  style={{ background: '#141414', border: '1px solid #1e1e1e', borderRadius: '14px', padding: '14px 16px', display: 'flex', alignItems: 'center', gap: '12px', textDecoration: 'none', transition: 'border-color 0.15s' }}
-                  onMouseEnter={e => (e.currentTarget.style.borderColor = '#2a2a2a')}
-                  onMouseLeave={e => (e.currentTarget.style.borderColor = '#1e1e1e')}>
-                  <div style={{ width: '3px', height: '36px', background: '#3b82f6', borderRadius: '2px', flexShrink: 0, opacity: 0.7 }} />
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={{ fontSize: '13px', fontWeight: 700, color: '#fff', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '3px' }}>
-                      {s48.clientes?.nome || '--'}
-                    </p>
-                    <p style={{ fontSize: '10px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                      {new Date(s48.data + 'T00:00:00').toLocaleDateString('pt-PT', { weekday: 'short', day: 'numeric', month: 'short' })}
-                      {s48.hora ? ` · ${s48.hora.slice(0, 5)}` : ''}
-                    </p>
-                  </div>
-                  <span style={{ fontSize: '10px', fontWeight: 700, color: '#3b82f6', background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.2)', borderRadius: '20px', padding: '3px 10px', flexShrink: 0, letterSpacing: '0.05em' }}>
-                    {tempoRelativo(s48.data, s48.hora)}
-                  </span>
-                  <span style={{ color: '#333', fontSize: '18px' }}>›</span>
-                </a>
-              ))}
-            </div>
-          </div>
-        )}
-
         {/* Navegacao */}
         <p style={s.sectionLbl}>{t.navigation}</p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '32px' }}>
@@ -248,9 +217,39 @@ export default function Dashboard() {
           </a>
         </div>
 
+        {/* Sessoes 24h — abaixo da navegacao */}
+        {sessoes24h.length > 0 && (
+          <div style={{ marginBottom: '32px' }}>
+            <p style={s.sectionLbl}>Ultimas 24h</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {sessoes24h.map((s24: any) => (
+                <a key={s24.id} href={`/clientes/${s24.cliente_id}/sessoes/${s24.id}`}
+                  style={{ background: '#141414', border: '1px solid #1e1e1e', borderRadius: '14px', padding: '14px 16px', display: 'flex', alignItems: 'center', gap: '12px', textDecoration: 'none', transition: 'border-color 0.15s' }}
+                  onMouseEnter={e => (e.currentTarget.style.borderColor = '#2a2a2a')}
+                  onMouseLeave={e => (e.currentTarget.style.borderColor = '#1e1e1e')}>
+                  <div style={{ width: '3px', height: '36px', background: '#3b82f6', borderRadius: '2px', flexShrink: 0, opacity: 0.7 }} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ fontSize: '13px', fontWeight: 700, color: '#fff', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '3px' }}>
+                      {s24.clientes?.nome || '--'}
+                    </p>
+                    <p style={{ fontSize: '10px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                      {new Date(s24.data + 'T00:00:00').toLocaleDateString('pt-PT', { weekday: 'short', day: 'numeric', month: 'short' })}
+                      {s24.hora ? ` · ${s24.hora.slice(0, 5)}` : ''}
+                    </p>
+                  </div>
+                  <span style={{ fontSize: '10px', fontWeight: 700, color: '#3b82f6', background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.2)', borderRadius: '20px', padding: '3px 10px', flexShrink: 0, letterSpacing: '0.05em' }}>
+                    {tempoRelativo(s24.data, s24.hora)}
+                  </span>
+                  <span style={{ color: '#333', fontSize: '18px' }}>›</span>
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Proximos agendamentos */}
         {proximos.length > 0 && (
-          <div style={{ marginTop: '8px' }}>
+          <div>
             <p style={s.sectionLbl}>{t.nextSchedules}</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {proximos.map((a: any) => (
