@@ -34,6 +34,7 @@ export default function Dashboard() {
   const [sessoesHoje, setSessoesHoje] = useState<number | null>(null)
   const [sessoesMes, setSessoesMes] = useState<number | null>(null)
   const [proximos, setProximos] = useState<any[]>([])
+  const [sessoes48h, setSessoes48h] = useState<any[]>([])
   const [langOpen, setLangOpen] = useState(false)
   const langRef = useRef<HTMLDivElement>(null)
   const supabase = createClient()
@@ -45,9 +46,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     function handler(e: MouseEvent) {
-      if (langRef.current && !langRef.current.contains(e.target as Node)) {
-        setLangOpen(false)
-      }
+      if (langRef.current && !langRef.current.contains(e.target as Node)) setLangOpen(false)
     }
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
@@ -57,14 +56,18 @@ export default function Dashboard() {
     async function carregarStats() {
       const { count: c } = await supabase.from('clientes').select('*', { count: 'exact', head: true })
       setTotalClientes(c || 0)
+
       const hoje = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Lisbon' })
       const { count: sh } = await supabase.from('sessoes').select('*', { count: 'exact', head: true }).eq('data', hoje)
       setSessoesHoje(sh || 0)
+
       const dataInicio = new Date(new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Lisbon' }))
       const inicio = new Date(dataInicio.getFullYear(), dataInicio.getMonth(), 1).toISOString().split('T')[0]
       const fim = new Date(dataInicio.getFullYear(), dataInicio.getMonth() + 1, 0).toISOString().split('T')[0]
       const { count: sm } = await supabase.from('sessoes').select('*', { count: 'exact', head: true }).gte('data', inicio).lte('data', fim)
       setSessoesMes(sm || 0)
+
+      // Proximos agendamentos
       const { data: ag } = await supabase.from('agendamentos').select('*, clientes(nome)').gte('data', hoje).order('data').order('hora_inicio').limit(10)
       const horaAgora = new Date().toLocaleTimeString('pt-PT', { timeZone: 'Europe/Lisbon', hour: '2-digit', minute: '2-digit', hour12: false })
       const filtrados = (ag || []).filter((a: any) => {
@@ -77,6 +80,20 @@ export default function Dashboard() {
         return da.localeCompare(db)
       }).slice(0, 3)
       setProximos(filtrados)
+
+      // Sessoes das ultimas 48h
+      const agora = new Date()
+      const h48atras = new Date(agora.getTime() - 48 * 60 * 60 * 1000)
+      const dataMin = h48atras.toISOString().split('T')[0]
+      const { data: s48 } = await supabase
+        .from('sessoes')
+        .select('*, clientes(nome)')
+        .gte('data', dataMin)
+        .lte('data', hoje)
+        .order('data', { ascending: false })
+        .order('hora', { ascending: false })
+        .limit(10)
+      setSessoes48h(s48 || [])
     }
     carregarStats()
   }, [])
@@ -103,6 +120,18 @@ export default function Dashboard() {
     { valor: animMes, label: t.thisMonth, icon: (<svg width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg>) },
   ]
 
+  // label relativo de tempo
+  function tempoRelativo(data: string, hora: string | null): string {
+    const agora = new Date()
+    const dataSessao = new Date(data + 'T' + (hora ? hora.slice(0, 5) : '00:00') + ':00')
+    const diffMs = agora.getTime() - dataSessao.getTime()
+    const diffH = Math.floor(diffMs / (1000 * 60 * 60))
+    const diffMin = Math.floor(diffMs / (1000 * 60))
+    if (diffMin < 60) return `${diffMin}min`
+    if (diffH < 24) return `${diffH}h`
+    return `${Math.floor(diffH / 24)}d`
+  }
+
   return (
     <main style={s.page}>
       <div style={s.wrap}>
@@ -114,61 +143,28 @@ export default function Dashboard() {
               <p style={{ color: '#3b82f6', fontSize: '10px', letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: '4px' }}>{hoje}</p>
               <h1 style={{ fontSize: '30px', fontWeight: 800, color: '#fff', textTransform: 'uppercase', letterSpacing: '-0.01em', lineHeight: 1 }}>{t.hello}</h1>
             </div>
-
-            {/* Dropdown idioma + Logout */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
               <div ref={langRef} style={{ position: 'relative' }}>
-                <button
-                  onClick={() => setLangOpen(o => !o)}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: '5px',
-                    padding: '5px 10px', borderRadius: '20px', cursor: 'pointer',
-                    background: 'transparent', border: '1px solid #1e1e1e',
-                    fontSize: '9px', fontWeight: 700, color: '#444',
-                    textTransform: 'uppercase', letterSpacing: '0.1em',
-                    transition: 'all 0.15s',
-                  }}>
+                <button onClick={() => setLangOpen(o => !o)}
+                  style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '5px 10px', borderRadius: '20px', cursor: 'pointer', background: 'transparent', border: '1px solid #1e1e1e', fontSize: '9px', fontWeight: 700, color: '#444', textTransform: 'uppercase', letterSpacing: '0.1em', transition: 'all 0.15s' }}>
                   {locale.toUpperCase()}
-                  <svg width="8" height="8" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"
-                    style={{ transition: 'transform 0.15s', transform: langOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}>
+                  <svg width="8" height="8" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24" style={{ transition: 'transform 0.15s', transform: langOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}>
                     <polyline points="6 9 12 15 18 9" />
                   </svg>
                 </button>
-
                 {langOpen && (
-                  <div style={{
-                    position: 'absolute', top: 'calc(100% + 6px)', right: 0,
-                    background: '#141414', border: '1px solid #222', borderRadius: '10px',
-                    overflow: 'hidden', zIndex: 50, minWidth: '110px',
-                  }}>
+                  <div style={{ position: 'absolute', top: 'calc(100% + 6px)', right: 0, background: '#141414', border: '1px solid #222', borderRadius: '10px', overflow: 'hidden', zIndex: 50, minWidth: '110px' }}>
                     {LANGS.map((lang, i) => (
-                      <button
-                        key={lang.code}
-                        onClick={() => { setLocale(lang.code); setLangOpen(false) }}
-                        style={{
-                          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                          width: '100%', padding: '9px 12px',
-                          background: locale === lang.code ? 'rgba(59,130,246,0.08)' : 'transparent',
-                          border: 'none',
-                          borderTop: i > 0 ? '1px solid #1e1e1e' : 'none',
-                          cursor: 'pointer', textAlign: 'left',
-                        }}>
-                        <span style={{ fontSize: '9px', fontWeight: 700, color: locale === lang.code ? '#3b82f6' : '#888', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-                          {lang.label}
-                        </span>
-                        {locale === lang.code && (
-                          <svg width="10" height="10" fill="none" stroke="#3b82f6" strokeWidth="2.5" viewBox="0 0 24 24">
-                            <polyline points="20 6 9 17 4 12" />
-                          </svg>
-                        )}
+                      <button key={lang.code} onClick={() => { setLocale(lang.code); setLangOpen(false) }}
+                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', padding: '9px 12px', background: locale === lang.code ? 'rgba(59,130,246,0.08)' : 'transparent', border: 'none', borderTop: i > 0 ? '1px solid #1e1e1e' : 'none', cursor: 'pointer', textAlign: 'left' }}>
+                        <span style={{ fontSize: '9px', fontWeight: 700, color: locale === lang.code ? '#3b82f6' : '#888', textTransform: 'uppercase', letterSpacing: '0.1em' }}>{lang.label}</span>
+                        {locale === lang.code && <svg width="10" height="10" fill="none" stroke="#3b82f6" strokeWidth="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" /></svg>}
                       </button>
                     ))}
                   </div>
                 )}
               </div>
-
               <div style={{ width: '1px', height: '16px', background: '#222', margin: '0 2px' }} />
-
               <button onClick={logout}
                 style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', padding: '0' }}>
                 <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -192,7 +188,37 @@ export default function Dashboard() {
           ))}
         </div>
 
-        {/* Navegação */}
+        {/* Sessoes 48h */}
+        {sessoes48h.length > 0 && (
+          <div style={{ marginBottom: '32px' }}>
+            <p style={s.sectionLbl}>Ultimas 48h</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {sessoes48h.map((s48: any) => (
+                <a key={s48.id} href={`/clientes/${s48.cliente_id}/sessoes/${s48.id}`}
+                  style={{ background: '#141414', border: '1px solid #1e1e1e', borderRadius: '14px', padding: '14px 16px', display: 'flex', alignItems: 'center', gap: '12px', textDecoration: 'none', transition: 'border-color 0.15s' }}
+                  onMouseEnter={e => (e.currentTarget.style.borderColor = '#2a2a2a')}
+                  onMouseLeave={e => (e.currentTarget.style.borderColor = '#1e1e1e')}>
+                  <div style={{ width: '3px', height: '36px', background: '#3b82f6', borderRadius: '2px', flexShrink: 0, opacity: 0.7 }} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ fontSize: '13px', fontWeight: 700, color: '#fff', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '3px' }}>
+                      {s48.clientes?.nome || '--'}
+                    </p>
+                    <p style={{ fontSize: '10px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                      {new Date(s48.data + 'T00:00:00').toLocaleDateString('pt-PT', { weekday: 'short', day: 'numeric', month: 'short' })}
+                      {s48.hora ? ` · ${s48.hora.slice(0, 5)}` : ''}
+                    </p>
+                  </div>
+                  <span style={{ fontSize: '10px', fontWeight: 700, color: '#3b82f6', background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.2)', borderRadius: '20px', padding: '3px 10px', flexShrink: 0, letterSpacing: '0.05em' }}>
+                    {tempoRelativo(s48.data, s48.hora)}
+                  </span>
+                  <span style={{ color: '#333', fontSize: '18px' }}>›</span>
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Navegacao */}
         <p style={s.sectionLbl}>{t.navigation}</p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '32px' }}>
           <a href="/clientes" style={s.card}>
@@ -216,19 +242,15 @@ export default function Dashboard() {
             <span style={s.arrow}>›</span>
           </a>
           <a href="/exercicios" style={s.card}>
-            <div style={s.iconBox}>
-              <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
-                <ellipse cx="12" cy="5" rx="9" ry="3" /><path d="M3 5v14c0 1.66 4.03 3 9 3s9-1.34 9-3V5" /><path d="M3 12c0 1.66 4.03 3 9 3s9-1.34 9-3" />
-              </svg>
-            </div>
+            <div style={s.iconBox}><svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3" /><path d="M3 5v14c0 1.66 4.03 3 9 3s9-1.34 9-3V5" /><path d="M3 12c0 1.66 4.03 3 9 3s9-1.34 9-3" /></svg></div>
             <div style={{ flex: 1 }}><p style={s.cardTitle}>Base de Dados</p></div>
             <span style={s.arrow}>›</span>
           </a>
         </div>
 
-        {/* Próximos */}
+        {/* Proximos agendamentos */}
         {proximos.length > 0 && (
-          <div style={{ marginTop: '32px' }}>
+          <div style={{ marginTop: '8px' }}>
             <p style={s.sectionLbl}>{t.nextSchedules}</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {proximos.map((a: any) => (
