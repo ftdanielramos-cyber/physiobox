@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useParams } from 'next/navigation'
 import Voltar from '@/components/Voltar'
@@ -8,7 +8,7 @@ import GerarReportButton from '@/components/reports/GerarReportButton'
 
 type Cliente = {
   id: string; nome: string; email: string; telefone: string
-  data_nasc: string; peso: number | null; altura: number | null
+  data_nasc: string; peso: number | null; altura: number | null; foto_url: string | null
 }
 type Ficha = { id: string; historico_medico: string; patologias: string; medicacao: string; observacoes: string }
 
@@ -43,6 +43,8 @@ export default function ClientePage() {
   const [observacoes, setObservacoes] = useState('')
   const [erro, setErro] = useState(false)
   const [mostrarPopupProgresso, setMostrarPopupProgresso] = useState(false)
+  const [uploadingFoto, setUploadingFoto] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const supabase = createClient()
 
   useEffect(() => {
@@ -68,6 +70,23 @@ export default function ClientePage() {
       const { data: s } = await supabase.from('sessoes').select('*').eq('cliente_id', id).order('data', { ascending: false })
       setSessoes(s || [])
     } catch (e) { setErro(true) }
+  }
+
+  async function handleFotoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file || !id) return
+    setUploadingFoto(true)
+    try {
+      const ext = file.name.split('.').pop()
+      const path = `${id}/avatar.${ext}`
+      const { error: upErr } = await supabase.storage.from('avatars').upload(path, file, { upsert: true })
+      if (upErr) { alert('Erro ao fazer upload: ' + upErr.message); setUploadingFoto(false); return }
+      const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(path)
+      const publicUrl = urlData.publicUrl + '?t=' + Date.now()
+      await supabase.from('clientes').update({ foto_url: publicUrl }).eq('id', id)
+      carregarDados()
+    } catch (err) { alert('Erro inesperado') }
+    setUploadingFoto(false)
   }
 
   async function guardarContacto(e: React.FormEvent) {
@@ -97,6 +116,7 @@ export default function ClientePage() {
 
   const tabs = [
     { id: 'perfil', label: 'Perfil' },
+    { id: 'avaliacao', label: 'Avaliacao' },
     { id: 'registos', label: 'Registos' },
     { id: 'progresso', label: 'Progresso' },
   ]
@@ -142,7 +162,73 @@ export default function ClientePage() {
     <main className="min-h-screen bg-[#0a0a0a] pb-24">
       <div className="max-w-2xl mx-auto px-4 py-10">
         <Voltar />
-        <h1 className="text-4xl font-extrabold text-white uppercase tracking-tight mb-6">{cliente.nome}</h1>
+
+        {/* Header com foto */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '28px' }}>
+          {/* Avatar circular */}
+          <div style={{ position: 'relative', flexShrink: 0 }}>
+            <div
+              onClick={() => fileInputRef.current?.click()}
+              style={{
+                width: '80px', height: '80px', borderRadius: '50%',
+                background: '#111', border: '2px solid #1e1e1e',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                cursor: 'pointer', overflow: 'hidden', position: 'relative',
+                transition: 'border-color 0.15s',
+              }}
+              onMouseEnter={e => (e.currentTarget.style.borderColor = '#3b82f6')}
+              onMouseLeave={e => (e.currentTarget.style.borderColor = '#1e1e1e')}
+            >
+              {uploadingFoto ? (
+                <div style={{ width: '20px', height: '20px', border: '2px solid #3b82f6', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+              ) : cliente.foto_url ? (
+                <img src={cliente.foto_url} alt={cliente.nome} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              ) : (
+                <svg width="32" height="32" fill="none" stroke="#2a2a2a" strokeWidth="1.2" viewBox="0 0 24 24">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                  <circle cx="12" cy="7" r="4"/>
+                </svg>
+              )}
+
+              {/* overlay camera ao hover */}
+              <div style={{
+                position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.55)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                opacity: 0, transition: 'opacity 0.15s', borderRadius: '50%',
+              }}
+                onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
+                onMouseLeave={e => (e.currentTarget.style.opacity = '0')}
+              >
+                <svg width="18" height="18" fill="none" stroke="#fff" strokeWidth="1.8" viewBox="0 0 24 24">
+                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                  <circle cx="12" cy="13" r="4"/>
+                </svg>
+              </div>
+            </div>
+
+            {/* badge + */}
+            <div style={{
+              position: 'absolute', bottom: '2px', right: '2px',
+              width: '20px', height: '20px', borderRadius: '50%',
+              background: '#3b82f6', border: '2px solid #0a0a0a',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              pointerEvents: 'none',
+            }}>
+              <svg width="9" height="9" fill="none" stroke="#fff" strokeWidth="2.5" viewBox="0 0 24 24">
+                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+            </div>
+
+            <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleFotoChange} />
+          </div>
+
+          <div>
+            <h1 style={{ fontSize: '28px', fontWeight: 900, color: '#fff', textTransform: 'uppercase', letterSpacing: '-0.01em', lineHeight: 1, marginBottom: '6px' }}>{cliente.nome}</h1>
+            <p style={{ fontSize: '10px', color: '#333', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+              {sessoes.length} {sessoes.length === 1 ? 'sessao' : 'sessoes'}
+            </p>
+          </div>
+        </div>
 
         {/* TABS */}
         <div style={{ display: 'flex', gap: '4px', borderBottom: '1px solid #1a1a1a', marginBottom: '24px' }}>
@@ -176,13 +262,12 @@ export default function ClientePage() {
               </div>
             )}
 
-            {/* INFORMACOES */}
             <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '20px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: editandoContacto || dadosContacto.length > 0 ? '16px' : '0' }}>
                 <p style={{ fontSize: '9px', color: '#3b82f6', textTransform: 'uppercase', letterSpacing: '0.15em', fontWeight: 700 }}>Informacoes</p>
                 <button onClick={() => setEditandoContacto(!editandoContacto)}
                   style={{ fontSize: '9px', color: editandoContacto ? '#ef4444' : '#555', textTransform: 'uppercase', letterSpacing: '0.1em', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 700 }}>
-                  {editandoContacto ? 'Cancelar' : 'Editar Informacoes'}
+                  {editandoContacto ? 'Cancelar' : 'Editar'}
                 </button>
               </div>
               {editandoContacto ? (
@@ -210,14 +295,18 @@ export default function ClientePage() {
                 <p style={{ fontSize: '11px', color: '#333', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Sem informacoes. Clica em Editar para adicionar.</p>
               )}
             </div>
+          </div>
+        )}
 
-            {/* AVALIACAO CLINICA */}
+        {/* AVALIACAO */}
+        {tab === 'avaliacao' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '20px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: editandoFicha || dadosFicha.length > 0 ? '16px' : '0' }}>
                 <p style={{ fontSize: '9px', color: '#3b82f6', textTransform: 'uppercase', letterSpacing: '0.15em', fontWeight: 700 }}>Avaliacao Clinica</p>
                 <button onClick={() => setEditandoFicha(!editandoFicha)}
                   style={{ fontSize: '9px', color: editandoFicha ? '#ef4444' : '#555', textTransform: 'uppercase', letterSpacing: '0.1em', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 700 }}>
-                  {editandoFicha ? 'Cancelar' : ficha ? 'Editar Avaliacao' : '+ Adicionar Avaliacao'}
+                  {editandoFicha ? 'Cancelar' : ficha ? 'Editar' : '+ Adicionar'}
                 </button>
               </div>
               {editandoFicha ? (
@@ -302,6 +391,8 @@ export default function ClientePage() {
           </button>
         </div>
       </div>
+
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </main>
   )
 }
