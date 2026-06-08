@@ -28,7 +28,7 @@ export default function ClientePage() {
   const [cliente, setCliente] = useState<Cliente | null>(null)
   const [ficha, setFicha] = useState<Ficha | null>(null)
   const [sessoes, setSessoes] = useState<any[]>([])
-  const [tab, setTab] = useState('visao')
+  const [tab, setTab] = useState('perfil')
   const [editandoContacto, setEditandoContacto] = useState(false)
   const [editandoFicha, setEditandoFicha] = useState(false)
   const [cNome, setCNome] = useState('')
@@ -42,6 +42,7 @@ export default function ClientePage() {
   const [medicacao, setMedicacao] = useState('')
   const [observacoes, setObservacoes] = useState('')
   const [erro, setErro] = useState(false)
+  const [mostrarPopupProgresso, setMostrarPopupProgresso] = useState(false)
   const supabase = createClient()
 
   useEffect(() => {
@@ -95,7 +96,6 @@ export default function ClientePage() {
   }
 
   const tabs = [
-    { id: 'visao', label: 'Visao Geral' },
     { id: 'perfil', label: 'Perfil' },
     { id: 'registos', label: 'Registos' },
     { id: 'progresso', label: 'Progresso' },
@@ -105,6 +105,25 @@ export default function ClientePage() {
   const labelClass = "block text-[9px] font-semibold text-[#444] uppercase tracking-[0.12em] mb-1.5"
 
   const idade = cliente ? calcularIdade(cliente.data_nasc) : null
+
+  const metricas = [
+    idade !== null ? { label: 'Idade', valor: String(idade), unidade: 'anos', cor: '#3b82f6' } : null,
+    cliente?.peso ? { label: 'Peso', valor: String(cliente.peso), unidade: 'kg', cor: '#8b5cf6' } : null,
+    cliente?.altura ? { label: 'Altura', valor: String(cliente.altura), unidade: 'cm', cor: '#10b981' } : null,
+  ].filter(Boolean) as { label: string; valor: string; unidade: string; cor: string }[]
+
+  const dadosContacto = [
+    cliente?.email ? { label: 'Email', valor: cliente.email } : null,
+    cliente?.telefone ? { label: 'Telefone', valor: cliente.telefone } : null,
+    cliente?.data_nasc ? { label: 'Data Nascimento', valor: new Date(cliente.data_nasc + 'T00:00:00').toLocaleDateString('pt-PT') } : null,
+  ].filter(Boolean) as { label: string; valor: string }[]
+
+  const dadosFicha = ficha ? [
+    ficha.historico_medico ? { label: 'Historico Medico', valor: ficha.historico_medico } : null,
+    ficha.patologias ? { label: 'Patologias', valor: ficha.patologias } : null,
+    ficha.medicacao ? { label: 'Medicacao', valor: ficha.medicacao } : null,
+    ficha.observacoes ? { label: 'Observacoes', valor: ficha.observacoes } : null,
+  ].filter(Boolean) as { label: string; valor: string }[] : []
 
   if (erro) return (
     <main style={{ minHeight: '100vh', background: '#0a0a0a', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '16px' }}>
@@ -119,82 +138,34 @@ export default function ClientePage() {
     </main>
   )
 
-  // métricas preenchidas: idade, peso, altura
-  const metricas = [
-    idade !== null ? { label: 'Idade', valor: String(idade), unidade: 'anos', cor: '#3b82f6' } : null,
-    cliente.peso ? { label: 'Peso', valor: String(cliente.peso), unidade: 'kg', cor: '#8b5cf6' } : null,
-    cliente.altura ? { label: 'Altura', valor: String(cliente.altura), unidade: 'cm', cor: '#10b981' } : null,
-  ].filter(Boolean) as { label: string; valor: string; unidade: string; cor: string }[]
-
-  // dados contacto preenchidos
-  const dadosContacto = [
-    cliente.email ? { label: 'Email', valor: cliente.email } : null,
-    cliente.telefone ? { label: 'Telefone', valor: cliente.telefone } : null,
-    cliente.data_nasc ? { label: 'Data Nascimento', valor: new Date(cliente.data_nasc + 'T00:00:00').toLocaleDateString('pt-PT') } : null,
-  ].filter(Boolean) as { label: string; valor: string }[]
-
-  // dados ficha preenchidos
-  const dadosFicha = ficha ? [
-    ficha.historico_medico ? { label: 'Historico Medico', valor: ficha.historico_medico } : null,
-    ficha.patologias ? { label: 'Patologias', valor: ficha.patologias } : null,
-    ficha.medicacao ? { label: 'Medicacao', valor: ficha.medicacao } : null,
-    ficha.observacoes ? { label: 'Observacoes', valor: ficha.observacoes } : null,
-  ].filter(Boolean) as { label: string; valor: string }[] : []
-
   return (
     <main className="min-h-screen bg-[#0a0a0a] pb-24">
       <div className="max-w-2xl mx-auto px-4 py-10">
         <Voltar />
         <h1 className="text-4xl font-extrabold text-white uppercase tracking-tight mb-6">{cliente.nome}</h1>
 
+        {/* TABS */}
         <div style={{ display: 'flex', gap: '4px', borderBottom: '1px solid #1a1a1a', marginBottom: '24px' }}>
           {tabs.map(t => (
-            <button key={t.id} onClick={() => setTab(t.id)}
+            <button key={t.id}
+              onClick={() => {
+                if (t.id === 'progresso') { setMostrarPopupProgresso(true); return }
+                setTab(t.id)
+              }}
               style={{ padding: '8px 12px', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', cursor: 'pointer', background: 'none', border: 'none', borderBottom: tab === t.id ? '2px solid #3b82f6' : '2px solid transparent', color: tab === t.id ? '#3b82f6' : '#444', transition: 'all 0.15s' }}>
               {t.label}
             </button>
           ))}
         </div>
 
-        {/* VISAO GERAL */}
-        {tab === 'visao' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '20px' }}>
-              <p style={{ fontSize: '9px', color: '#3b82f6', textTransform: 'uppercase', letterSpacing: '0.15em', fontWeight: 700, marginBottom: '12px' }}>Resumo</p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <p style={{ fontSize: '10px', color: '#444', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Total de Sessoes</p>
-                  <p style={{ fontSize: '10px', color: '#fff', fontWeight: 700 }}>{sessoes.length}</p>
-                </div>
-                {sessoes.length > 0 && (
-                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <p style={{ fontSize: '10px', color: '#444', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Ultima Sessao</p>
-                    <p style={{ fontSize: '10px', color: '#fff', fontWeight: 700 }}>{new Date(sessoes[0].data + 'T00:00:00').toLocaleDateString('pt-PT')}</p>
-                  </div>
-                )}
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <p style={{ fontSize: '10px', color: '#444', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Ficha Clinica</p>
-                  <p style={{ fontSize: '10px', color: ficha ? '#3b82f6' : '#444', fontWeight: 700 }}>{ficha ? 'Completa' : 'Por preencher'}</p>
-                </div>
-              </div>
-            </div>
-            <a href={`/clientes/${id}/nova-sessao`} style={{ background: '#1d4ed8', border: '1px solid #2563eb', borderRadius: '16px', padding: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', textDecoration: 'none' }}>
-              <p style={{ fontSize: '12px', fontWeight: 700, color: '#fff', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Nova Sessao</p>
-              <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '20px' }}>›</span>
-            </a>
-          </div>
-        )}
-
         {/* PERFIL */}
         {tab === 'perfil' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-
-            {/* METRICAS — só aparecem se preenchidas */}
             {metricas.length > 0 && (
               <div style={{ display: 'grid', gridTemplateColumns: `repeat(${metricas.length}, 1fr)`, gap: '10px' }}>
                 {metricas.map(m => (
                   <div key={m.label} style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '16px', position: 'relative', overflow: 'hidden' }}>
-                    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', background: m.cor, opacity: 0.6 }} />
+                    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', background: m.cor, opacity: 0.7 }} />
                     <p style={{ fontSize: '9px', color: '#444', textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: '10px' }}>{m.label}</p>
                     <div style={{ display: 'flex', alignItems: 'baseline', gap: '3px' }}>
                       <span style={{ fontSize: '28px', fontWeight: 900, color: '#fff', lineHeight: 1 }}>{m.valor}</span>
@@ -214,7 +185,6 @@ export default function ClientePage() {
                   {editandoContacto ? 'Cancelar' : 'Editar Informacoes'}
                 </button>
               </div>
-
               {editandoContacto ? (
                 <form onSubmit={guardarContacto} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   <div><label className={labelClass}>Nome Completo *</label><input value={cNome} onChange={e => setCNome(e.target.value)} required className={inputClass} /></div>
@@ -241,7 +211,7 @@ export default function ClientePage() {
               )}
             </div>
 
-            {/* FICHA CLINICA */}
+            {/* AVALIACAO CLINICA */}
             <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '20px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: editandoFicha || dadosFicha.length > 0 ? '16px' : '0' }}>
                 <p style={{ fontSize: '9px', color: '#3b82f6', textTransform: 'uppercase', letterSpacing: '0.15em', fontWeight: 700 }}>Avaliacao Clinica</p>
@@ -250,7 +220,6 @@ export default function ClientePage() {
                   {editandoFicha ? 'Cancelar' : ficha ? 'Editar Avaliacao' : '+ Adicionar Avaliacao'}
                 </button>
               </div>
-
               {editandoFicha ? (
                 <form onSubmit={guardarFicha} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   <div><label className={labelClass}>Historico Medico</label><textarea value={historico} onChange={e => setHistorico(e.target.value)} rows={3} className={inputClass} /></div>
@@ -300,14 +269,38 @@ export default function ClientePage() {
             ))}
           </div>
         )}
+      </div>
 
-        {/* PROGRESSO */}
-        {tab === 'progresso' && (
-          <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '20px' }}>
-            <p style={{ fontSize: '9px', color: '#3b82f6', textTransform: 'uppercase', letterSpacing: '0.15em', fontWeight: 700, marginBottom: '12px' }}>Progresso</p>
-            <p style={{ fontSize: '11px', color: '#333', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Em breve -- graficos de evolucao e metricas.</p>
+      {/* POPUP PROGRESSO */}
+      {mostrarPopupProgresso && (
+        <div onClick={() => setMostrarPopupProgresso(false)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(6px)', zIndex: 40 }} />
+      )}
+      <div style={{
+        position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 50,
+        transform: mostrarPopupProgresso ? 'translateY(0)' : 'translateY(100%)',
+        transition: 'transform 0.3s cubic-bezier(0.32, 0.72, 0, 1)',
+        background: '#111', borderTop: '1px solid #1e1e1e', borderRadius: '24px 24px 0 0',
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '14px 0 0' }}>
+          <div style={{ width: '36px', height: '4px', borderRadius: '2px', background: '#2a2a2a' }} />
+        </div>
+        <div style={{ padding: '32px 24px 48px', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+          <div style={{ width: '56px', height: '56px', borderRadius: '18px', background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
+            <svg width="26" height="26" fill="none" stroke="#3b82f6" strokeWidth="1.8" viewBox="0 0 24 24">
+              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+            </svg>
           </div>
-        )}
+          <p style={{ fontSize: '10px', color: '#3b82f6', textTransform: 'uppercase', letterSpacing: '0.2em', fontWeight: 700, marginBottom: '8px' }}>Em Breve</p>
+          <h2 style={{ fontSize: '22px', fontWeight: 900, color: '#fff', textTransform: 'uppercase', letterSpacing: '-0.02em', marginBottom: '12px' }}>Progresso</h2>
+          <p style={{ fontSize: '12px', color: '#555', lineHeight: 1.6, maxWidth: '280px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            Graficos de evolucao, metricas de desempenho e historico de progressao estao a caminho.
+          </p>
+          <button onClick={() => setMostrarPopupProgresso(false)}
+            style={{ marginTop: '28px', background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '40px', padding: '12px 28px', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#555', cursor: 'pointer' }}>
+            Fechar
+          </button>
+        </div>
       </div>
     </main>
   )
