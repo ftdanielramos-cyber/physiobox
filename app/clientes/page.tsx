@@ -90,7 +90,7 @@ export default function ClientesPage() {
         <div className="flex items-center justify-between mb-6 border-b border-[#1a1a1a] pb-6">
           <div>
             <p style={{ fontSize: '10px', color: '#3b82f6', textTransform: 'uppercase', letterSpacing: '0.15em', fontWeight: 700, marginBottom: '4px' }}>{t.clientsTitle}</p>
-            <h1 className="text-4xl font-extrabold text-white uppercase tracking-tight">{clientes.length} {t.clients.toLowerCase()}</h1>
+            <h1 className="text-4xl font-extrabold text-white uppercase tracking-tight">{t.clients}</h1>
           </div>
           <button onClick={() => { setEditandoId(null); setMostrarForm(true) }}
             style={{ width: '44px', height: '44px', borderRadius: '50%', background: '#1d4ed8', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#fff', flexShrink: 0, boxShadow: '0 0 20px rgba(59,130,246,0.3)' }}>
