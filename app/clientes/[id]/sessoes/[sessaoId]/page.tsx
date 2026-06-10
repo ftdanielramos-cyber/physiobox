@@ -372,16 +372,14 @@ export default function SessaoPage() {
                 <div style={{ display: 'flex', gap: '8px', marginBottom: '20px' }}>
                   <button type="button" onClick={() => setLateralidade('bilateral')} style={latBtn(lateralidade === 'bilateral')}>Bilateral</button>
                   <button type="button" onClick={() => setLateralidade('unilateral')} style={latBtn(lateralidade === 'unilateral', '#7c3aed', '#8b5cf6')}>Unilateral</button>
-                  <button type="button" onClick={() => setLateralidade('esquerdo')} style={latBtn(lateralidade === 'esquerdo')}>Esq</button>
-                  <button type="button" onClick={() => setLateralidade('direito')} style={latBtn(lateralidade === 'direito')}>Dir</button>
                 </div>
 
                 {lateralidade === 'unilateral' ? (
                   <>
                     <p style={{ ...c.label, marginBottom: '14px' }}>Séries por lado</p>
-                    <div style={{ display: 'flex', gap: '12px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                       <SetsPanel label="Direito" getter={setsDir} setter={setSetsDir} cor="#3b82f6" />
-                      <div style={{ width: '1px', background: '#1e1e1e', flexShrink: 0 }} />
+                      <div style={{ height: '1px', background: '#1e1e1e' }} />
                       <SetsPanel label="Esquerdo" getter={setsEsq} setter={setSetsEsq} cor="#a855f7" />
                     </div>
                   </>
