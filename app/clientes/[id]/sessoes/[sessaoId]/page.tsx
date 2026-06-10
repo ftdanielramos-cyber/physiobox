@@ -290,23 +290,17 @@ export default function SessaoPage() {
                 <span style={{ fontSize: '10px', fontWeight: 800, color: cor, textTransform: 'uppercase', letterSpacing: '0.1em' }}>S{set.numero}</span>
                 {getter.length > 1 && <button type="button" onClick={() => removeSet(getter, setter, i)} style={{ background: 'none', border: 'none', color: '#444', fontSize: '16px', cursor: 'pointer' }}>×</button>}
               </div>
-              <div style={{ display: 'flex', gap: '10px' }}>
-                <div style={{ flex: 1 }}>
-                  <p style={{ fontSize: '7px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '6px', textAlign: 'center' }}>Reps</p>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <button type="button" onClick={() => ajustar(setter, i, 'repeticoes', -1)} style={{ ...c.stepBtn, width: '34px', height: '34px', fontSize: '18px' }}>−</button>
-                    <span style={{ flex: 1, textAlign: 'center', fontSize: '18px', fontWeight: 800, color: '#fff' }}>{set.repeticoes}</span>
-                    <button type="button" onClick={() => ajustar(setter, i, 'repeticoes', 1)} style={{ ...c.stepBtn, width: '34px', height: '34px', fontSize: '18px' }}>+</button>
-                  </div>
-                </div>
-                <div style={{ flex: 1 }}>
-                  <p style={{ fontSize: '7px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '6px', textAlign: 'center' }}>kg</p>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <button type="button" onClick={() => ajustar(setter, i, 'carga', -1)} style={{ ...c.stepBtn, width: '34px', height: '34px', fontSize: '18px' }}>−</button>
-                    <span style={{ flex: 1, textAlign: 'center', fontSize: '18px', fontWeight: 800, color: '#fff' }}>{set.carga}</span>
-                    <button type="button" onClick={() => ajustar(setter, i, 'carga', 1)} style={{ ...c.stepBtn, width: '34px', height: '34px', fontSize: '18px' }}>+</button>
-                  </div>
-                </div>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button type="button" onClick={() => abrirPicker(setter, i, 'repeticoes', set.repeticoes)}
+                  style={{ flex: 1, background: '#111', border: `1px solid ${cor}40`, borderRadius: '10px', padding: '12px 8px', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+                  <span style={{ fontSize: '7px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Reps</span>
+                  <span style={{ fontSize: '22px', fontWeight: 800, color: '#fff', lineHeight: 1 }}>{set.repeticoes}</span>
+                </button>
+                <button type="button" onClick={() => abrirPicker(setter, i, 'carga', set.carga)}
+                  style={{ flex: 1, background: '#111', border: `1px solid ${cor}40`, borderRadius: '10px', padding: '12px 8px', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+                  <span style={{ fontSize: '7px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.1em' }}>kg</span>
+                  <span style={{ fontSize: '22px', fontWeight: 800, color: '#fff', lineHeight: 1 }}>{set.carga}</span>
+                </button>
               </div>
             </div>
           ))}
@@ -408,23 +402,17 @@ export default function SessaoPage() {
                             <span style={{ fontSize: '11px', fontWeight: 800, color: '#3b82f6', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Série {set.numero}</span>
                             {sets.length > 1 && <button type="button" onClick={() => removeSet(sets, setSets, i)} style={{ background: 'none', border: 'none', color: '#444', fontSize: '18px', cursor: 'pointer' }}>×</button>}
                           </div>
-                          <div style={{ display: 'flex', gap: '16px' }}>
-                            <div style={{ flex: 1 }}>
-                              <p style={{ fontSize: '8px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '8px', textAlign: 'center' }}>Reps</p>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <button type="button" onClick={() => ajustar(setSets, i, 'repeticoes', -1)} style={c.stepBtn}>−</button>
-                                <span style={{ flex: 1, textAlign: 'center', fontSize: '20px', fontWeight: 800, color: '#fff' }}>{set.repeticoes}</span>
-                                <button type="button" onClick={() => ajustar(setSets, i, 'repeticoes', 1)} style={c.stepBtn}>+</button>
-                              </div>
-                            </div>
-                            <div style={{ flex: 1 }}>
-                              <p style={{ fontSize: '8px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '8px', textAlign: 'center' }}>Carga kg</p>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <button type="button" onClick={() => ajustar(setSets, i, 'carga', -1)} style={c.stepBtn}>−</button>
-                                <span style={{ flex: 1, textAlign: 'center', fontSize: '20px', fontWeight: 800, color: '#fff' }}>{set.carga}</span>
-                                <button type="button" onClick={() => ajustar(setSets, i, 'carga', 1)} style={c.stepBtn}>+</button>
-                              </div>
-                            </div>
+                          <div style={{ display: 'flex', gap: '8px' }}>
+                            <button type="button" onClick={() => abrirPicker(setSets, i, 'repeticoes', set.repeticoes)}
+                              style={{ flex: 1, background: '#0d0d0d', border: '1px solid #2a2a2a', borderRadius: '10px', padding: '12px 8px', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+                              <span style={{ fontSize: '7px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Reps</span>
+                              <span style={{ fontSize: '22px', fontWeight: 800, color: '#fff', lineHeight: 1 }}>{set.repeticoes}</span>
+                            </button>
+                            <button type="button" onClick={() => abrirPicker(setSets, i, 'carga', set.carga)}
+                              style={{ flex: 1, background: '#0d0d0d', border: '1px solid #2a2a2a', borderRadius: '10px', padding: '12px 8px', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+                              <span style={{ fontSize: '7px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.1em' }}>kg</span>
+                              <span style={{ fontSize: '22px', fontWeight: 800, color: '#fff', lineHeight: 1 }}>{set.carga}</span>
+                            </button>
                           </div>
                         </div>
                       ))}
