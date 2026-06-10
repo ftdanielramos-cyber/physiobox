@@ -26,8 +26,7 @@ export default function Home() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Bebas+Neue&display=swap');
-
+        @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap');
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         .home {
@@ -58,10 +57,10 @@ export default function Home() {
 
         .glow {
           position: absolute;
-          width: 600px;
-          height: 600px;
+          width: 700px;
+          height: 700px;
           border-radius: 50%;
-          background: radial-gradient(ellipse, rgba(59,130,246,0.12) 0%, transparent 70%);
+          background: radial-gradient(ellipse, rgba(59,130,246,0.1) 0%, transparent 70%);
           top: 50%;
           left: 50%;
           transform: translate(-50%, -50%);
@@ -70,7 +69,7 @@ export default function Home() {
         }
 
         @keyframes pulse {
-          0%, 100% { opacity: 0.6; transform: translate(-50%, -50%) scale(1); }
+          0%, 100% { opacity: 0.5; transform: translate(-50%, -50%) scale(1); }
           50% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
         }
 
@@ -78,7 +77,7 @@ export default function Home() {
           position: absolute;
           left: 0; right: 0;
           height: 2px;
-          background: linear-gradient(90deg, transparent, rgba(59,130,246,0.3), transparent);
+          background: linear-gradient(90deg, transparent, rgba(59,130,246,0.25), transparent);
           animation: scan 8s linear infinite;
           pointer-events: none;
         }
@@ -95,26 +94,39 @@ export default function Home() {
           z-index: 10;
           text-align: center;
           padding: 0 24px;
-          animation: fadeUp 1s ease forwards;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 0;
+        }
+
+        .logo-wrap {
+          animation: fadeUp 0.8s ease 0.1s both;
+          margin-bottom: 48px;
+        }
+
+        .logo-img {
+          width: clamp(180px, 40vw, 280px);
+          height: auto;
+          filter: drop-shadow(0 0 40px rgba(59,130,246,0.3));
         }
 
         @keyframes fadeUp {
-          from { opacity: 0; transform: translateY(30px); }
+          from { opacity: 0; transform: translateY(24px); }
           to { opacity: 1; transform: translateY(0); }
         }
 
-        .title {
-          font-family: 'Bebas Neue', sans-serif;
-          font-size: clamp(90px, 20vw, 160px);
-          color: #fff;
-          line-height: 0.9;
-          letter-spacing: -2px;
-          margin-bottom: 56px;
-          animation: fadeUp 1s ease 0.2s both;
+        .tagline {
+          font-size: 9px;
+          color: #2a2a4a;
+          letter-spacing: 0.3em;
+          text-transform: uppercase;
+          margin-bottom: 48px;
+          animation: fadeUp 0.8s ease 0.2s both;
         }
 
         .btn-wrap {
-          animation: fadeUp 1s ease 0.4s both;
+          animation: fadeUp 0.8s ease 0.3s both;
           display: flex;
           gap: 12px;
           justify-content: center;
@@ -129,9 +141,9 @@ export default function Home() {
           background: #3b82f6;
           color: #fff;
           text-decoration: none;
-          padding: 16px 40px;
+          padding: 15px 36px;
           font-family: 'Space Mono', monospace;
-          font-size: 11px;
+          font-size: 10px;
           font-weight: 700;
           letter-spacing: 0.2em;
           text-transform: uppercase;
@@ -141,7 +153,7 @@ export default function Home() {
           overflow: hidden;
           transition: all 0.2s;
           cursor: pointer;
-          min-width: 140px;
+          min-width: 130px;
         }
 
         .btn::before {
@@ -162,37 +174,28 @@ export default function Home() {
 
         .btn-demo {
           background: transparent;
-          border: 1px solid rgba(59,130,246,0.4);
+          border: 1px solid rgba(59,130,246,0.3);
           color: #3b82f6;
         }
 
         .btn-demo:hover {
-          background: rgba(59,130,246,0.1) !important;
-          box-shadow: 0 8px 30px rgba(59,130,246,0.2) !important;
-          border-color: rgba(59,130,246,0.8) !important;
-          transform: translateY(-1px);
+          background: rgba(59,130,246,0.08) !important;
+          box-shadow: 0 8px 30px rgba(59,130,246,0.15) !important;
+          border-color: rgba(59,130,246,0.7) !important;
         }
 
-        .btn-demo:disabled, .btn:disabled {
-          opacity: 0.5;
-          cursor: not-allowed;
-          transform: none !important;
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; }
+
+        .spinner {
+          width: 14px;
+          height: 14px;
+          border: 2px solid rgba(255,255,255,0.2);
+          border-top-color: #fff;
+          border-radius: 50%;
+          animation: spin 0.7s linear infinite;
         }
 
-        /* Ampulheta animada */
-
-
-        .version {
-          position: absolute;
-          bottom: 24px;
-          left: 50%;
-          transform: translateX(-50%);
-          font-size: 8px;
-          color: #222;
-          letter-spacing: 0.2em;
-          text-transform: uppercase;
-          white-space: nowrap;
-        }
+        @keyframes spin { to { transform: rotate(360deg); } }
 
         .side-bar {
           position: absolute;
@@ -210,13 +213,25 @@ export default function Home() {
         .side-bar-item {
           width: 2px;
           height: 20px;
-          background: rgba(59,130,246,0.15);
+          background: rgba(59,130,246,0.1);
           border-radius: 1px;
         }
 
         .side-bar-item.active {
-          background: rgba(59,130,246,0.6);
+          background: rgba(59,130,246,0.5);
           height: 40px;
+        }
+
+        .version {
+          position: absolute;
+          bottom: 24px;
+          left: 50%;
+          transform: translateX(-50%);
+          font-size: 8px;
+          color: #1a1a2a;
+          letter-spacing: 0.2em;
+          text-transform: uppercase;
+          white-space: nowrap;
         }
       `}</style>
 
@@ -237,26 +252,23 @@ export default function Home() {
         </div>
 
         <div className="content">
-          <h1 className="title">Physiobox</h1>
+          <div className="logo-wrap">
+            <img src="/logo.png" alt="PhysioBox" className="logo-img" />
+          </div>
+
+          <p className="tagline">Performance & Reabilitação</p>
 
           <div className="btn-wrap">
-            <Link
-              href="/login"
-              className="btn"
-              onClick={() => setLoadingLogin(true)}
-            >
+            <Link href="/login" className="btn" onClick={() => setLoadingLogin(true)}>
               {loadingLogin ? <span className="spinner" /> : 'Entrar'}
             </Link>
-
             <button onClick={entrarDemo} disabled={loadingDemo} className="btn btn-demo">
-              {loadingDemo
-                ? <span className="hourglass">⏳</span>
-                : 'Ver Demo'}
+              {loadingDemo ? <span className="spinner" /> : 'Ver Demo'}
             </button>
           </div>
         </div>
 
-        <div className="version">PhysioBox v1.0 · 2025</div>
+        <div className="version">PhysioBox · 2025</div>
       </main>
     </>
   )
