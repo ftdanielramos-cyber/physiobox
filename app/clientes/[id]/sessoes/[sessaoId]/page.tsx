@@ -120,14 +120,30 @@ export default function SessaoPage() {
     }
     holdRef.current = setTimeout(passo, vel)
   }
-  function pararHold() { if (holdRef.current) { clearTimeout(holdRef.current); holdRef.current = null } }
+  function pararHold() {
+    if (holdRef.current) { clearTimeout(holdRef.current); holdRef.current = null }
+    touchUsadoRef.current = false
+  }
+
+  // Garantir que o hold para sempre que o toque termina em qualquer sítio
+  useEffect(() => {
+    const stop = () => pararHold()
+    window.addEventListener('touchend', stop)
+    window.addEventListener('touchcancel', stop)
+    window.addEventListener('mouseup', stop)
+    return () => {
+      window.removeEventListener('touchend', stop)
+      window.removeEventListener('touchcancel', stop)
+      window.removeEventListener('mouseup', stop)
+    }
+  }, [])
 
   function holdProps(setter: React.Dispatch<React.SetStateAction<Set[]>>, index: number, campo: 'repeticoes' | 'carga', delta: number) {
     return {
-      onMouseDown: () => { if (touchUsadoRef.current) return; iniciarHold(setter, index, campo, delta) },
-      onMouseUp: pararHold, onMouseLeave: pararHold,
-      onTouchStart: (e: React.TouchEvent) => { e.preventDefault(); touchUsadoRef.current = true; iniciarHold(setter, index, campo, delta) },
-      onTouchEnd: (e: React.TouchEvent) => { e.preventDefault(); pararHold() },
+      onMouseDown: (e: React.MouseEvent) => { e.preventDefault(); if (touchUsadoRef.current) return; iniciarHold(setter, index, campo, delta) },
+      onTouchStart: (e: React.TouchEvent) => { e.preventDefault(); e.stopPropagation(); touchUsadoRef.current = true; iniciarHold(setter, index, campo, delta) },
+      onTouchEnd: (e: React.TouchEvent) => { e.preventDefault(); e.stopPropagation(); pararHold() },
+      onTouchCancel: (e: React.TouchEvent) => { e.preventDefault(); pararHold() },
     }
   }
 
