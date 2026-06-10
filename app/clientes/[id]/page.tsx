@@ -47,6 +47,7 @@ export default function ClientePage() {
   const [uploadingFoto, setUploadingFoto] = useState(false)
   const [mesAtual, setMesAtual] = useState(new Date())
   const [sessaoSelecionada, setSessaoSelecionada] = useState<any | null>(null)
+  const [sessoesDia, setSessoesDia] = useState<any[]>([])
   const [avaliacoes, setAvaliacoes] = useState<AvaliacaoFuncional[]>([])
   const [avaliacaoAberta, setAvaliacaoAberta] = useState<AvaliacaoFuncional | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -387,7 +388,7 @@ export default function ClientePage() {
                   const isHoje = hoje.getDate() === dia && hoje.getMonth() === mesAtual.getMonth() && hoje.getFullYear() === mesAtual.getFullYear()
                   return (
                     <button key={dia}
-                      onClick={() => temSessao && setSessaoSelecionada(sessoesNoDia[0])}
+                      onClick={() => { if (temSessao) { setSessoesDia(sessoesNoDia); setSessaoSelecionada(sessoesNoDia[0]) } }}
                       style={{
                         display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
                         aspectRatio: '1/1', borderRadius: '8px', fontSize: '11px', fontWeight: temSessao ? 800 : 400,
@@ -414,6 +415,36 @@ export default function ClientePage() {
             {sessoes.length === 0 && (
               <p style={{ fontSize: '11px', color: '#333', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Sem sessoes ainda.</p>
             )}
+
+            {/* Lista de sessoes do mes atual */}
+            {(() => {
+              const sessoesMes = sessoes.filter(s => {
+                const d = new Date(s.data + 'T00:00:00')
+                return d.getMonth() === mesAtual.getMonth() && d.getFullYear() === mesAtual.getFullYear()
+              }).sort((a, b) => b.data.localeCompare(a.data))
+              if (sessoesMes.length === 0) return null
+              return (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <p style={{ fontSize: '9px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: '4px' }}>
+                    {meses[mesAtual.getMonth()]} · {sessoesMes.length} {sessoesMes.length === 1 ? 'sessao' : 'sessoes'}
+                  </p>
+                  {sessoesMes.map(s => (
+                    <div key={s.id} style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', display: 'flex', alignItems: 'center' }}>
+                      <a href={`/clientes/${id}/sessoes/${s.id}`} style={{ flex: 1, padding: '14px 16px', textDecoration: 'none' }}>
+                        <p style={{ fontSize: '12px', fontWeight: 700, color: '#fff', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                          {new Date(s.data + 'T00:00:00').toLocaleDateString('pt-PT', { weekday: 'long', day: 'numeric', month: 'long' })}
+                        </p>
+                        {s.hora && <p style={{ fontSize: '10px', color: '#444', textTransform: 'uppercase', marginTop: '3px' }}>{s.hora.slice(0, 5)}</p>}
+                      </a>
+                      <button onClick={() => apagarSessao(s.id)}
+                        style={{ background: 'none', border: 'none', color: '#2a2a2a', fontSize: '18px', cursor: 'pointer', padding: '0 16px', transition: 'color 0.15s' }}
+                        onMouseEnter={e => (e.currentTarget.style.color = '#ef4444')}
+                        onMouseLeave={e => (e.currentTarget.style.color = '#2a2a2a')}>×</button>
+                    </div>
+                  ))}
+                </div>
+              )
+            })()}
           </div>
         )}
       </div>
@@ -436,31 +467,51 @@ export default function ClientePage() {
           <div style={{ padding: '20px 24px 40px' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
               <div>
-                <p style={{ fontSize: '10px', color: '#3b82f6', textTransform: 'uppercase', letterSpacing: '0.15em', fontWeight: 700, marginBottom: '4px' }}>Sessao</p>
+                <p style={{ fontSize: '10px', color: '#3b82f6', textTransform: 'uppercase', letterSpacing: '0.15em', fontWeight: 700, marginBottom: '4px' }}>
+                  {sessoesDia.length > 1 ? `${sessoesDia.length} Sessoes` : 'Sessao'}
+                </p>
                 <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#fff', textTransform: 'uppercase', margin: 0 }}>
                   {new Date(sessaoSelecionada.data + 'T00:00:00').toLocaleDateString('pt-PT', { weekday: 'long', day: 'numeric', month: 'long' })}
                 </h2>
-                {sessaoSelecionada.hora && <p style={{ fontSize: '11px', color: '#555', marginTop: '4px', textTransform: 'uppercase' }}>{sessaoSelecionada.hora.slice(0, 5)}</p>}
               </div>
               <button onClick={() => setSessaoSelecionada(null)}
                 style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#1a1a1a', border: '1px solid #222', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#555' }}>
                 <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               </button>
             </div>
-            {sessaoSelecionada.notas && (
-              <p style={{ fontSize: '12px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '20px' }}>{sessaoSelecionada.notas}</p>
+
+            {sessoesDia.length > 1 ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {sessoesDia.map(s => (
+                  <div key={s.id} style={{ background: '#0d0d0d', border: '1px solid #1e1e1e', borderRadius: '14px', display: 'flex', alignItems: 'center' }}>
+                    <a href={`/clientes/${id}/sessoes/${s.id}`} style={{ flex: 1, padding: '14px 16px', textDecoration: 'none' }}>
+                      <p style={{ fontSize: '12px', fontWeight: 700, color: '#fff', textTransform: 'uppercase' }}>
+                        {s.hora ? s.hora.slice(0, 5) : 'Sem hora'}
+                      </p>
+                      {s.notas && <p style={{ fontSize: '10px', color: '#444', marginTop: '3px', textTransform: 'uppercase' }}>{s.notas}</p>}
+                    </a>
+                    <button onClick={() => apagarSessao(s.id)}
+                      style={{ background: 'none', border: 'none', color: '#2a2a2a', fontSize: '18px', cursor: 'pointer', padding: '0 16px', transition: 'color 0.15s' }}
+                      onMouseEnter={e => (e.currentTarget.style.color = '#ef4444')}
+                      onMouseLeave={e => (e.currentTarget.style.color = '#2a2a2a')}>×</button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {sessaoSelecionada.notas && (
+                  <p style={{ fontSize: '12px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{sessaoSelecionada.notas}</p>
+                )}
+                <a href={`/clientes/${id}/sessoes/${sessaoSelecionada.id}`}
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', background: '#1d4ed8', color: '#fff', borderRadius: '14px', padding: '14px', fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', textDecoration: 'none' }}>
+                  Ver Sessao <span style={{ fontSize: '16px' }}>›</span>
+                </a>
+                <button onClick={() => apagarSessao(sessaoSelecionada.id)}
+                  style={{ background: 'transparent', color: '#555', border: '1px solid #1e1e1e', borderRadius: '14px', padding: '12px', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', cursor: 'pointer' }}>
+                  Apagar Sessao
+                </button>
+              </div>
             )}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              <a href={`/clientes/${id}/sessoes/${sessaoSelecionada.id}`}
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', background: '#1d4ed8', color: '#fff', borderRadius: '14px', padding: '14px', fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', textDecoration: 'none' }}>
-                Ver Sessao
-                <span style={{ fontSize: '16px' }}>›</span>
-              </a>
-              <button onClick={() => apagarSessao(sessaoSelecionada.id)}
-                style={{ background: 'transparent', color: '#555', border: '1px solid #1e1e1e', borderRadius: '14px', padding: '12px', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', cursor: 'pointer' }}>
-                Apagar Sessao
-              </button>
-            </div>
           </div>
         )}
       </div>
