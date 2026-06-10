@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useParams, useRouter } from 'next/navigation'
 import Voltar from '@/components/Voltar'
+import ScrollPicker from '@/components/ScrollPicker'
 
 type Set = { numero: number; repeticoes: number; carga: number }
 type SetDB = { id: string; numero: number; repeticoes: number; carga: number; lado?: string }
@@ -516,7 +517,7 @@ export default function SessaoPage() {
         </div>
       </div>
 
-      {/* PICKER POPUP */}
+      {/* PICKER POPUP — scroll estilo iOS */}
       {pickerAberto && (
         <div onClick={() => setPickerAberto(false)}
           style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(6px)', zIndex: 60 }} />
@@ -530,37 +531,23 @@ export default function SessaoPage() {
         <div style={{ display: 'flex', justifyContent: 'center', padding: '14px 0 0' }}>
           <div style={{ width: '36px', height: '4px', borderRadius: '2px', background: '#2a2a2a' }} />
         </div>
-        <div style={{ padding: '16px 24px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ padding: '16px 24px 8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <p style={{ fontSize: '10px', color: '#3b82f6', textTransform: 'uppercase', letterSpacing: '0.15em', fontWeight: 700 }}>
             {pickerCampo === 'repeticoes' ? 'Repetições' : 'Carga (kg)'}
           </p>
           <button onClick={() => setPickerAberto(false)} style={{ background: 'none', border: 'none', color: '#555', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', cursor: 'pointer' }}>Cancelar</button>
         </div>
-        <div style={{ padding: '12px 24px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px' }}>
-          <button type="button" onClick={() => setPickerValor(v => Math.max(pickerCampo === 'repeticoes' ? 1 : 0, v - 1))}
-            style={{ width: '52px', height: '52px', borderRadius: '14px', background: '#1a1a1a', border: '1px solid #2a2a2a', color: '#fff', fontSize: '28px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 300 }}>−</button>
-          <div style={{ flex: 1, textAlign: 'center' }}>
-            <span style={{ fontSize: '56px', fontWeight: 900, color: '#fff', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{pickerValor}</span>
-            <p style={{ fontSize: '10px', color: '#444', textTransform: 'uppercase', letterSpacing: '0.1em', marginTop: '4px' }}>{pickerCampo === 'repeticoes' ? 'reps' : 'kg'}</p>
-          </div>
-          <button type="button" onClick={() => setPickerValor(v => Math.min(pickerCampo === 'repeticoes' ? 50 : 300, v + 1))}
-            style={{ width: '52px', height: '52px', borderRadius: '14px', background: '#1a1a1a', border: '1px solid #2a2a2a', color: '#fff', fontSize: '28px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 300 }}>+</button>
-        </div>
-        {/* Scroll rápido */}
-        <div style={{ padding: '0 24px 12px' }}>
-          <div style={{ overflowX: 'auto', display: 'flex', gap: '6px', paddingBottom: '4px', scrollbarWidth: 'none' }}>
-            {(pickerCampo === 'repeticoes'
-              ? [1,2,3,4,5,6,7,8,9,10,12,15,20,25,30]
-              : [0,2.5,5,10,15,20,25,30,40,50,60,70,80,90,100,120,140,160,180,200]
-            ).map(v => (
-              <button key={v} type="button" onClick={() => setPickerValor(v)}
-                style={{ flexShrink: 0, padding: '6px 12px', borderRadius: '20px', background: pickerValor === v ? '#3b82f6' : '#1a1a1a', border: pickerValor === v ? '1px solid #3b82f6' : '1px solid #2a2a2a', color: pickerValor === v ? '#fff' : '#555', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}>
-                {v}
-              </button>
-            ))}
-          </div>
-        </div>
-        <div style={{ padding: '0 24px 40px' }}>
+
+        {/* Drum roll scroll */}
+        <ScrollPicker
+          min={pickerCampo === 'repeticoes' ? 1 : 0}
+          max={pickerCampo === 'repeticoes' ? 50 : 300}
+          value={pickerValor}
+          onChange={setPickerValor}
+          unidade={pickerCampo === 'repeticoes' ? 'reps' : 'kg'}
+        />
+
+        <div style={{ padding: '12px 24px 40px' }}>
           <button type="button" onClick={confirmarPicker}
             style={{ width: '100%', background: '#3b82f6', border: 'none', borderRadius: '14px', padding: '16px', fontSize: '13px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.15em', color: '#fff', cursor: 'pointer' }}>
             Confirmar
