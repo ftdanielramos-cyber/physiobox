@@ -2,11 +2,9 @@
 
 import Link from 'next/link'
 import { useState } from 'react'
-import { createClient } from '@/lib/supabase'
 
 export default function Home() {
   const [loadingLogin, setLoadingLogin] = useState(false)
-  const supabase = createClient()
 
   return (
     <>
@@ -22,6 +20,7 @@ export default function Home() {
           justify-content: center;
           position: relative;
           font-family: 'Space Mono', monospace;
+          overflow: hidden;
         }
 
         .grid-bg {
@@ -57,7 +56,7 @@ export default function Home() {
         }
 
         .logo-img {
-          width: clamp(220px, 50vw, 340px);
+          width: clamp(300px, 65vw, 460px);
           height: auto;
           filter: drop-shadow(0 0 40px rgba(59,130,246,0.25));
         }
@@ -118,7 +117,6 @@ export default function Home() {
 
         <div className="content">
           <img src="/logo.png" alt="PhysioBox" className="logo-img" />
-
           <Link href="/login" className="btn" onClick={() => setLoadingLogin(true)}>
             {loadingLogin ? <span className="spinner" /> : 'Entrar'}
           </Link>
