@@ -273,7 +273,7 @@ export default function SessaoPage() {
   const tipoBtn = (ativo: boolean): React.CSSProperties => ({ flex: 1, padding: '16px', borderRadius: '14px', fontSize: '13px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', cursor: 'pointer', background: ativo ? '#1d4ed8' : '#0d0d0d', border: ativo ? '1px solid #2563eb' : '1px solid #1e1e1e', color: ativo ? '#fff' : '#666', transition: 'all 0.15s' })
   const latBtn = (ativo: boolean, cor = '#1d4ed8', corBorder = '#2563eb'): React.CSSProperties => ({ flex: 1, padding: '10px', borderRadius: '10px', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', cursor: 'pointer', background: ativo ? cor : '#0d0d0d', border: ativo ? `1px solid ${corBorder}` : '1px solid #1e1e1e', color: ativo ? '#fff' : '#666', transition: 'all 0.15s' })
 
-  function SetsPanel({ label, getter, setter, cor }: { label: string; getter: Set[]; setter: (v: Set[]) => void; cor: string }) {
+  function SetsPanel({ label, getter, setter, cor }: { label: string; getter: Set[]; setter: React.Dispatch<React.SetStateAction<Set[]>>; cor: string }) {
     return (
       <div style={{ flex: 1 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
