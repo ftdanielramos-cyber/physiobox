@@ -102,16 +102,15 @@ export default function SessaoPage() {
   }
 
   // hold press — usa setter funcional para sempre ter o valor mais recente
-  function iniciarHold(setter: (v: Set[]) => void, index: number, campo: 'repeticoes' | 'carga', delta: number) {
-    // primeira aplicação imediata
-    setter(prev => {
+  function iniciarHold(setter: React.Dispatch<React.SetStateAction<Set[]>>, index: number, campo: 'repeticoes' | 'carga', delta: number) {
+    setter((prev: Set[]) => {
       const novos = [...prev]
       novos[index] = { ...novos[index], [campo]: Math.max(0, novos[index][campo] + delta) }
       return novos
     })
     let vel = 300
     function passo() {
-      setter(prev => {
+      setter((prev: Set[]) => {
         const novos = [...prev]
         novos[index] = { ...novos[index], [campo]: Math.max(0, novos[index][campo] + delta) }
         return novos
@@ -123,7 +122,7 @@ export default function SessaoPage() {
   }
   function pararHold() { if (holdRef.current) { clearTimeout(holdRef.current); holdRef.current = null } }
 
-  function holdProps(setter: (v: Set[]) => void, index: number, campo: 'repeticoes' | 'carga', delta: number) {
+  function holdProps(setter: React.Dispatch<React.SetStateAction<Set[]>>, index: number, campo: 'repeticoes' | 'carga', delta: number) {
     return {
       onMouseDown: () => { if (touchUsadoRef.current) return; iniciarHold(setter, index, campo, delta) },
       onMouseUp: pararHold, onMouseLeave: pararHold,
