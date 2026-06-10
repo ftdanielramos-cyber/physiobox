@@ -100,24 +100,34 @@ export default function SessaoPage() {
     if (getter.length === 1) return
     setter(getter.filter((_, i) => i !== index).map((s, i) => ({ ...s, numero: i + 1 })))
   }
-  function ajustarSetGen(getter: Set[], setter: (v: Set[]) => void, index: number, campo: 'repeticoes' | 'carga', delta: number) {
-    const novos = [...getter]; novos[index] = { ...novos[index], [campo]: Math.max(0, novos[index][campo] + delta) }; setter(novos)
-  }
 
-  // hold press
-  function iniciarHold(getter: Set[], setter: (v: Set[]) => void, index: number, campo: 'repeticoes' | 'carga', delta: number) {
-    ajustarSetGen(getter, setter, index, campo, delta)
-    let vel = 400
-    function passo() { ajustarSetGen(getter, setter, index, campo, delta); vel = Math.max(50, vel - 60); holdRef.current = setTimeout(passo, vel) }
+  // hold press — usa setter funcional para sempre ter o valor mais recente
+  function iniciarHold(setter: (v: Set[]) => void, index: number, campo: 'repeticoes' | 'carga', delta: number) {
+    // primeira aplicação imediata
+    setter(prev => {
+      const novos = [...prev]
+      novos[index] = { ...novos[index], [campo]: Math.max(0, novos[index][campo] + delta) }
+      return novos
+    })
+    let vel = 300
+    function passo() {
+      setter(prev => {
+        const novos = [...prev]
+        novos[index] = { ...novos[index], [campo]: Math.max(0, novos[index][campo] + delta) }
+        return novos
+      })
+      vel = Math.max(60, vel - 30)
+      holdRef.current = setTimeout(passo, vel)
+    }
     holdRef.current = setTimeout(passo, vel)
   }
   function pararHold() { if (holdRef.current) { clearTimeout(holdRef.current); holdRef.current = null } }
 
-  function holdProps(getter: Set[], setter: (v: Set[]) => void, index: number, campo: 'repeticoes' | 'carga', delta: number) {
+  function holdProps(setter: (v: Set[]) => void, index: number, campo: 'repeticoes' | 'carga', delta: number) {
     return {
-      onMouseDown: () => { if (touchUsadoRef.current) return; iniciarHold(getter, setter, index, campo, delta) },
+      onMouseDown: () => { if (touchUsadoRef.current) return; iniciarHold(setter, index, campo, delta) },
       onMouseUp: pararHold, onMouseLeave: pararHold,
-      onTouchStart: (e: React.TouchEvent) => { e.preventDefault(); touchUsadoRef.current = true; iniciarHold(getter, setter, index, campo, delta) },
+      onTouchStart: (e: React.TouchEvent) => { e.preventDefault(); touchUsadoRef.current = true; iniciarHold(setter, index, campo, delta) },
       onTouchEnd: (e: React.TouchEvent) => { e.preventDefault(); pararHold() },
     }
   }
@@ -282,17 +292,17 @@ export default function SessaoPage() {
                 <div style={{ flex: 1 }}>
                   <p style={{ fontSize: '7px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '6px', textAlign: 'center' }}>Reps</p>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <button type="button" {...holdProps(getter, setter, i, 'repeticoes', -1)} style={{ ...c.stepBtn, width: '34px', height: '34px', fontSize: '18px' }}>−</button>
+                    <button type="button" {...holdProps(setter, i, 'repeticoes', -1)} style={{ ...c.stepBtn, width: '34px', height: '34px', fontSize: '18px' }}>−</button>
                     <span style={{ flex: 1, textAlign: 'center', fontSize: '18px', fontWeight: 800, color: '#fff' }}>{set.repeticoes}</span>
-                    <button type="button" {...holdProps(getter, setter, i, 'repeticoes', 1)} style={{ ...c.stepBtn, width: '34px', height: '34px', fontSize: '18px' }}>+</button>
+                    <button type="button" {...holdProps(setter, i, 'repeticoes', 1)} style={{ ...c.stepBtn, width: '34px', height: '34px', fontSize: '18px' }}>+</button>
                   </div>
                 </div>
                 <div style={{ flex: 1 }}>
                   <p style={{ fontSize: '7px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '6px', textAlign: 'center' }}>kg</p>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <button type="button" {...holdProps(getter, setter, i, 'carga', -1)} style={{ ...c.stepBtn, width: '34px', height: '34px', fontSize: '18px' }}>−</button>
+                    <button type="button" {...holdProps(setter, i, 'carga', -1)} style={{ ...c.stepBtn, width: '34px', height: '34px', fontSize: '18px' }}>−</button>
                     <span style={{ flex: 1, textAlign: 'center', fontSize: '18px', fontWeight: 800, color: '#fff' }}>{set.carga}</span>
-                    <button type="button" {...holdProps(getter, setter, i, 'carga', 1)} style={{ ...c.stepBtn, width: '34px', height: '34px', fontSize: '18px' }}>+</button>
+                    <button type="button" {...holdProps(setter, i, 'carga', 1)} style={{ ...c.stepBtn, width: '34px', height: '34px', fontSize: '18px' }}>+</button>
                   </div>
                 </div>
               </div>
@@ -400,17 +410,17 @@ export default function SessaoPage() {
                             <div style={{ flex: 1 }}>
                               <p style={{ fontSize: '8px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '8px', textAlign: 'center' }}>Reps</p>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <button type="button" {...holdProps(sets, setSets, i, 'repeticoes', -1)} style={c.stepBtn}>−</button>
+                                <button type="button" {...holdProps(setSets, i, 'repeticoes', -1)} style={c.stepBtn}>−</button>
                                 <span style={{ flex: 1, textAlign: 'center', fontSize: '20px', fontWeight: 800, color: '#fff' }}>{set.repeticoes}</span>
-                                <button type="button" {...holdProps(sets, setSets, i, 'repeticoes', 1)} style={c.stepBtn}>+</button>
+                                <button type="button" {...holdProps(setSets, i, 'repeticoes', 1)} style={c.stepBtn}>+</button>
                               </div>
                             </div>
                             <div style={{ flex: 1 }}>
                               <p style={{ fontSize: '8px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '8px', textAlign: 'center' }}>Carga kg</p>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <button type="button" {...holdProps(sets, setSets, i, 'carga', -1)} style={c.stepBtn}>−</button>
+                                <button type="button" {...holdProps(setSets, i, 'carga', -1)} style={c.stepBtn}>−</button>
                                 <span style={{ flex: 1, textAlign: 'center', fontSize: '20px', fontWeight: 800, color: '#fff' }}>{set.carga}</span>
-                                <button type="button" {...holdProps(sets, setSets, i, 'carga', 1)} style={c.stepBtn}>+</button>
+                                <button type="button" {...holdProps(setSets, i, 'carga', 1)} style={c.stepBtn}>+</button>
                               </div>
                             </div>
                           </div>
