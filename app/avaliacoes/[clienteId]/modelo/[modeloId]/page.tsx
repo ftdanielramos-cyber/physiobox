@@ -257,15 +257,19 @@ export default function ModeloPage() {
     setGuardando(true)
     try {
       const { data: { user } } = await supabase.auth.getUser()
-      await supabase.from('avaliacoes').insert({
+      console.log('user:', user?.id, 'clienteId:', clienteId)
+      const { data, error } = await supabase.from('avaliacoes').insert({
         cliente_id: clienteId,
         fisio_id: user?.id,
         modelo: modelo.nome,
         respostas: respostas,
         data: new Date().toISOString().split('T')[0],
       })
+      console.log('resultado:', data, 'erro:', error)
+      if (error) { alert('Erro: ' + error.message); setGuardando(false); return }
       router.push(`/clientes/${clienteId}`)
     } catch (e) {
+      console.log('catch:', e)
       alert('Erro ao guardar avaliacao.')
     }
     setGuardando(false)
