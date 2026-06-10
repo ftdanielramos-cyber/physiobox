@@ -56,8 +56,6 @@ export default function SessaoPage() {
   const [loadingBD, setLoadingBD] = useState(false)
 
   const supabase = createClient()
-  const holdRef = useRef<any>(null)
-  const touchUsadoRef = useRef(false)
 
   useEffect(() => { if (!sessaoId || !id) return; carregarDados() }, [sessaoId])
 
@@ -101,50 +99,38 @@ export default function SessaoPage() {
     setter(getter.filter((_, i) => i !== index).map((s, i) => ({ ...s, numero: i + 1 })))
   }
 
-  // hold press — usa setter funcional para sempre ter o valor mais recente
-  function iniciarHold(setter: React.Dispatch<React.SetStateAction<Set[]>>, index: number, campo: 'repeticoes' | 'carga', delta: number) {
+  function ajustar(setter: React.Dispatch<React.SetStateAction<Set[]>>, index: number, campo: 'repeticoes' | 'carga', delta: number) {
     setter((prev: Set[]) => {
       const novos = [...prev]
       novos[index] = { ...novos[index], [campo]: Math.max(0, novos[index][campo] + delta) }
       return novos
     })
-    let vel = 300
-    function passo() {
-      setter((prev: Set[]) => {
+  }
+
+  // Picker state
+  const [pickerAberto, setPickerAberto] = useState(false)
+  const [pickerSetter, setPickerSetter] = useState<React.Dispatch<React.SetStateAction<Set[]>> | null>(null)
+  const [pickerIndex, setPickerIndex] = useState(0)
+  const [pickerCampo, setPickerCampo] = useState<'repeticoes' | 'carga'>('repeticoes')
+  const [pickerValor, setPickerValor] = useState(10)
+
+  function abrirPicker(setter: React.Dispatch<React.SetStateAction<Set[]>>, index: number, campo: 'repeticoes' | 'carga', valorAtual: number) {
+    setPickerSetter(() => setter)
+    setPickerIndex(index)
+    setPickerCampo(campo)
+    setPickerValor(valorAtual)
+    setPickerAberto(true)
+  }
+
+  function confirmarPicker() {
+    if (pickerSetter) {
+      pickerSetter((prev: Set[]) => {
         const novos = [...prev]
-        novos[index] = { ...novos[index], [campo]: Math.max(0, novos[index][campo] + delta) }
+        novos[pickerIndex] = { ...novos[pickerIndex], [pickerCampo]: pickerValor }
         return novos
       })
-      vel = Math.max(60, vel - 30)
-      holdRef.current = setTimeout(passo, vel)
     }
-    holdRef.current = setTimeout(passo, vel)
-  }
-  function pararHold() {
-    if (holdRef.current) { clearTimeout(holdRef.current); holdRef.current = null }
-    touchUsadoRef.current = false
-  }
-
-  // Garantir que o hold para sempre que o toque termina em qualquer sítio
-  useEffect(() => {
-    const stop = () => pararHold()
-    window.addEventListener('touchend', stop)
-    window.addEventListener('touchcancel', stop)
-    window.addEventListener('mouseup', stop)
-    return () => {
-      window.removeEventListener('touchend', stop)
-      window.removeEventListener('touchcancel', stop)
-      window.removeEventListener('mouseup', stop)
-    }
-  }, [])
-
-  function holdProps(setter: React.Dispatch<React.SetStateAction<Set[]>>, index: number, campo: 'repeticoes' | 'carga', delta: number) {
-    return {
-      onMouseDown: (e: React.MouseEvent) => { e.preventDefault(); if (touchUsadoRef.current) return; iniciarHold(setter, index, campo, delta) },
-      onTouchStart: (e: React.TouchEvent) => { e.preventDefault(); e.stopPropagation(); touchUsadoRef.current = true; iniciarHold(setter, index, campo, delta) },
-      onTouchEnd: (e: React.TouchEvent) => { e.preventDefault(); e.stopPropagation(); pararHold() },
-      onTouchCancel: (e: React.TouchEvent) => { e.preventDefault(); pararHold() },
-    }
+    setPickerAberto(false)
   }
 
   function iniciarEdicao(r: Registo) {
@@ -307,17 +293,17 @@ export default function SessaoPage() {
                 <div style={{ flex: 1 }}>
                   <p style={{ fontSize: '7px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '6px', textAlign: 'center' }}>Reps</p>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <button type="button" {...holdProps(setter, i, 'repeticoes', -1)} style={{ ...c.stepBtn, width: '34px', height: '34px', fontSize: '18px' }}>−</button>
+                    <button type="button" onClick={() => ajustar(setter, i, 'repeticoes', -1)} style={{ ...c.stepBtn, width: '34px', height: '34px', fontSize: '18px' }}>−</button>
                     <span style={{ flex: 1, textAlign: 'center', fontSize: '18px', fontWeight: 800, color: '#fff' }}>{set.repeticoes}</span>
-                    <button type="button" {...holdProps(setter, i, 'repeticoes', 1)} style={{ ...c.stepBtn, width: '34px', height: '34px', fontSize: '18px' }}>+</button>
+                    <button type="button" onClick={() => ajustar(setter, i, 'repeticoes', 1)} style={{ ...c.stepBtn, width: '34px', height: '34px', fontSize: '18px' }}>+</button>
                   </div>
                 </div>
                 <div style={{ flex: 1 }}>
                   <p style={{ fontSize: '7px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '6px', textAlign: 'center' }}>kg</p>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <button type="button" {...holdProps(setter, i, 'carga', -1)} style={{ ...c.stepBtn, width: '34px', height: '34px', fontSize: '18px' }}>−</button>
+                    <button type="button" onClick={() => ajustar(setter, i, 'carga', -1)} style={{ ...c.stepBtn, width: '34px', height: '34px', fontSize: '18px' }}>−</button>
                     <span style={{ flex: 1, textAlign: 'center', fontSize: '18px', fontWeight: 800, color: '#fff' }}>{set.carga}</span>
-                    <button type="button" {...holdProps(setter, i, 'carga', 1)} style={{ ...c.stepBtn, width: '34px', height: '34px', fontSize: '18px' }}>+</button>
+                    <button type="button" onClick={() => ajustar(setter, i, 'carga', 1)} style={{ ...c.stepBtn, width: '34px', height: '34px', fontSize: '18px' }}>+</button>
                   </div>
                 </div>
               </div>
@@ -425,17 +411,17 @@ export default function SessaoPage() {
                             <div style={{ flex: 1 }}>
                               <p style={{ fontSize: '8px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '8px', textAlign: 'center' }}>Reps</p>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <button type="button" {...holdProps(setSets, i, 'repeticoes', -1)} style={c.stepBtn}>−</button>
+                                <button type="button" onClick={() => ajustar(setSets, i, 'repeticoes', -1)} style={c.stepBtn}>−</button>
                                 <span style={{ flex: 1, textAlign: 'center', fontSize: '20px', fontWeight: 800, color: '#fff' }}>{set.repeticoes}</span>
-                                <button type="button" {...holdProps(setSets, i, 'repeticoes', 1)} style={c.stepBtn}>+</button>
+                                <button type="button" onClick={() => ajustar(setSets, i, 'repeticoes', 1)} style={c.stepBtn}>+</button>
                               </div>
                             </div>
                             <div style={{ flex: 1 }}>
                               <p style={{ fontSize: '8px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '8px', textAlign: 'center' }}>Carga kg</p>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <button type="button" {...holdProps(setSets, i, 'carga', -1)} style={c.stepBtn}>−</button>
+                                <button type="button" onClick={() => ajustar(setSets, i, 'carga', -1)} style={c.stepBtn}>−</button>
                                 <span style={{ flex: 1, textAlign: 'center', fontSize: '20px', fontWeight: 800, color: '#fff' }}>{set.carga}</span>
-                                <button type="button" {...holdProps(setSets, i, 'carga', 1)} style={c.stepBtn}>+</button>
+                                <button type="button" onClick={() => ajustar(setSets, i, 'carga', 1)} style={c.stepBtn}>+</button>
                               </div>
                             </div>
                           </div>
@@ -526,6 +512,58 @@ export default function SessaoPage() {
             style={{ width: '100%', background: '#16a34a', color: '#fff', border: 'none', borderRadius: '14px', padding: '16px', fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.2em', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
             <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" /></svg>
             Terminar Sessão
+          </button>
+        </div>
+      </div>
+
+      {/* PICKER POPUP */}
+      {pickerAberto && (
+        <div onClick={() => setPickerAberto(false)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(6px)', zIndex: 60 }} />
+      )}
+      <div style={{
+        position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 61,
+        transform: pickerAberto ? 'translateY(0)' : 'translateY(100%)',
+        transition: 'transform 0.25s cubic-bezier(0.32, 0.72, 0, 1)',
+        background: '#111', borderTop: '1px solid #1e1e1e', borderRadius: '24px 24px 0 0',
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '14px 0 0' }}>
+          <div style={{ width: '36px', height: '4px', borderRadius: '2px', background: '#2a2a2a' }} />
+        </div>
+        <div style={{ padding: '16px 24px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <p style={{ fontSize: '10px', color: '#3b82f6', textTransform: 'uppercase', letterSpacing: '0.15em', fontWeight: 700 }}>
+            {pickerCampo === 'repeticoes' ? 'Repetições' : 'Carga (kg)'}
+          </p>
+          <button onClick={() => setPickerAberto(false)} style={{ background: 'none', border: 'none', color: '#555', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', cursor: 'pointer' }}>Cancelar</button>
+        </div>
+        <div style={{ padding: '12px 24px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px' }}>
+          <button type="button" onClick={() => setPickerValor(v => Math.max(pickerCampo === 'repeticoes' ? 1 : 0, v - 1))}
+            style={{ width: '52px', height: '52px', borderRadius: '14px', background: '#1a1a1a', border: '1px solid #2a2a2a', color: '#fff', fontSize: '28px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 300 }}>−</button>
+          <div style={{ flex: 1, textAlign: 'center' }}>
+            <span style={{ fontSize: '56px', fontWeight: 900, color: '#fff', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{pickerValor}</span>
+            <p style={{ fontSize: '10px', color: '#444', textTransform: 'uppercase', letterSpacing: '0.1em', marginTop: '4px' }}>{pickerCampo === 'repeticoes' ? 'reps' : 'kg'}</p>
+          </div>
+          <button type="button" onClick={() => setPickerValor(v => Math.min(pickerCampo === 'repeticoes' ? 50 : 300, v + 1))}
+            style={{ width: '52px', height: '52px', borderRadius: '14px', background: '#1a1a1a', border: '1px solid #2a2a2a', color: '#fff', fontSize: '28px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 300 }}>+</button>
+        </div>
+        {/* Scroll rápido */}
+        <div style={{ padding: '0 24px 12px' }}>
+          <div style={{ overflowX: 'auto', display: 'flex', gap: '6px', paddingBottom: '4px', scrollbarWidth: 'none' }}>
+            {(pickerCampo === 'repeticoes'
+              ? [1,2,3,4,5,6,7,8,9,10,12,15,20,25,30]
+              : [0,2.5,5,10,15,20,25,30,40,50,60,70,80,90,100,120,140,160,180,200]
+            ).map(v => (
+              <button key={v} type="button" onClick={() => setPickerValor(v)}
+                style={{ flexShrink: 0, padding: '6px 12px', borderRadius: '20px', background: pickerValor === v ? '#3b82f6' : '#1a1a1a', border: pickerValor === v ? '1px solid #3b82f6' : '1px solid #2a2a2a', color: pickerValor === v ? '#fff' : '#555', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}>
+                {v}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div style={{ padding: '0 24px 40px' }}>
+          <button type="button" onClick={confirmarPicker}
+            style={{ width: '100%', background: '#3b82f6', border: 'none', borderRadius: '14px', padding: '16px', fontSize: '13px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.15em', color: '#fff', cursor: 'pointer' }}>
+            Confirmar
           </button>
         </div>
       </div>
