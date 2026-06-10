@@ -117,6 +117,12 @@ export default function ClientePage() {
     setEditandoFicha(false); carregarDados()
   }
 
+  async function apagarAvaliacao(avaliacaoId: string) {
+    if (!confirm('Apagar esta avaliacao?')) return
+    await supabase.from('avaliacoes').delete().eq('id', avaliacaoId)
+    carregarDados()
+  }
+
   async function apagarSessao(sessaoId: string) {
     if (!confirm('Apagar esta sessao?')) return
     await supabase.from('sessoes').delete().eq('id', sessaoId)
@@ -324,21 +330,25 @@ export default function ClientePage() {
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   {avaliacoes.map(av => (
-                    <button key={av.id} onClick={() => setAvaliacaoAberta(av)}
-                      style={{ display: 'flex', alignItems: 'center', gap: '12px', background: '#0d0d0d', border: '1px solid #1e1e1e', borderRadius: '12px', padding: '14px 16px', cursor: 'pointer', textAlign: 'left', width: '100%', transition: 'border-color 0.15s' }}
-                      onMouseEnter={e => (e.currentTarget.style.borderColor = '#10b981')}
-                      onMouseLeave={e => (e.currentTarget.style.borderColor = '#1e1e1e')}>
-                      <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                        <svg width="16" height="16" fill="none" stroke="#10b981" strokeWidth="2" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-                      </div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <p style={{ fontSize: '12px', fontWeight: 700, color: '#fff', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '3px' }}>{av.modelo}</p>
-                        <p style={{ fontSize: '10px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                          {av.data ? new Date(av.data + 'T00:00:00').toLocaleDateString('pt-PT', { day: 'numeric', month: 'long', year: 'numeric' }) : '--'}
-                        </p>
-                      </div>
-                      <svg width="14" height="14" fill="none" stroke="#333" strokeWidth="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
-                    </button>
+                    <div key={av.id} style={{ display: 'flex', alignItems: 'center', background: '#0d0d0d', border: '1px solid #1e1e1e', borderRadius: '12px', overflow: 'hidden' }}>
+                      <button onClick={() => setAvaliacaoAberta(av)}
+                        style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, padding: '14px 16px', cursor: 'pointer', textAlign: 'left', background: 'none', border: 'none' }}>
+                        <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                          <svg width="16" height="16" fill="none" stroke="#10b981" strokeWidth="2" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <p style={{ fontSize: '12px', fontWeight: 700, color: '#fff', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '3px' }}>{av.modelo}</p>
+                          <p style={{ fontSize: '10px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                            {av.data ? new Date(av.data + 'T00:00:00').toLocaleDateString('pt-PT', { day: 'numeric', month: 'long', year: 'numeric' }) : '--'}
+                          </p>
+                        </div>
+                        <svg width="14" height="14" fill="none" stroke="#333" strokeWidth="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+                      </button>
+                      <button onClick={() => apagarAvaliacao(av.id)}
+                        style={{ background: 'none', border: 'none', borderLeft: '1px solid #1a1a1a', color: '#2a2a2a', fontSize: '18px', cursor: 'pointer', padding: '0 14px', alignSelf: 'stretch', display: 'flex', alignItems: 'center', transition: 'color 0.15s' }}
+                        onMouseEnter={e => (e.currentTarget.style.color = '#ef4444')}
+                        onMouseLeave={e => (e.currentTarget.style.color = '#2a2a2a')}>×</button>
+                    </div>
                   ))}
                 </div>
               )}
