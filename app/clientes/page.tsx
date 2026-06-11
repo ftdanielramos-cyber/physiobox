@@ -5,7 +5,6 @@ import { createClient } from '@/lib/supabase'
 import { useParams } from 'next/navigation'
 import Voltar from '@/components/Voltar'
 import GerarReportButton from '@/components/reports/GerarReportButton'
-import BodyChart from '@/components/BodyChart'
 
 type Cliente = {
   id: string; nome: string; email: string; telefone: string
