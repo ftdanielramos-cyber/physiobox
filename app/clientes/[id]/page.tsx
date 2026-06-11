@@ -5,12 +5,13 @@ import { createClient } from '@/lib/supabase'
 import { useParams } from 'next/navigation'
 import Voltar from '@/components/Voltar'
 import GerarReportButton from '@/components/reports/GerarReportButton'
+import BodyChart from '@/components/BodyChart'
 
 type Cliente = {
   id: string; nome: string; email: string; telefone: string
   data_nasc: string; peso: number | null; altura: number | null; foto_url: string | null
 }
-type Ficha = { id: string; historico_medico: string; patologias: string; medicacao: string; observacoes: string }
+type Ficha = { id: string; historico_medico: string; patologias: string; medicacao: string; observacoes: string; regioes_afetadas?: string[] }
 type AvaliacaoFuncional = { id: string; modelo: string; data: string; respostas: Record<string, string> }
 
 function calcularIdade(dataNasc: string | null): number | null {
@@ -42,6 +43,7 @@ export default function ClientePage() {
   const [patologias, setPatologias] = useState('')
   const [medicacao, setMedicacao] = useState('')
   const [observacoes, setObservacoes] = useState('')
+  const [regioes, setRegioes] = useState<string[]>([])
   const [erro, setErro] = useState(false)
   const [mostrarPopupProgresso, setMostrarPopupProgresso] = useState(false)
   const [uploadingFoto, setUploadingFoto] = useState(false)
@@ -71,8 +73,8 @@ export default function ClientePage() {
         setCNome(c.nome || ''); setCEmail(c.email || ''); setCTelefone(c.telefone || '')
         setCDataNasc(c.data_nasc || ''); setCPeso(c.peso ? String(c.peso) : ''); setCAltura(c.altura ? String(c.altura) : '')
       }
-      const { data: f } = await supabase.from('fichas').select('*').eq('cliente_id', id).single()
-      if (f) { setFicha(f); setHistorico(f.historico_medico || ''); setPatologias(f.patologias || ''); setMedicacao(f.medicacao || ''); setObservacoes(f.observacoes || '') }
+      const { data: f } = await supabase.from('fichas').select('*').eq('cliente_id', id).maybeSingle()
+      if (f) { setFicha(f); setHistorico(f.historico_medico || ''); setPatologias(f.patologias || ''); setMedicacao(f.medicacao || ''); setObservacoes(f.observacoes || ''); setRegioes(f.regioes_afetadas || []) }
       const { data: s } = await supabase.from('sessoes').select('*').eq('cliente_id', id).order('data', { ascending: false })
       setSessoes(s || [])
       const { data: av } = await supabase.from('avaliacoes').select('*').eq('cliente_id', id).order('created_at', { ascending: false })
@@ -111,7 +113,7 @@ export default function ClientePage() {
 
   async function guardarFicha(e: React.FormEvent) {
     e.preventDefault()
-    const dados = { historico_medico: historico, patologias, medicacao, observacoes, updated_at: new Date().toISOString() }
+    const dados = { historico_medico: historico, patologias, medicacao, observacoes, regioes_afetadas: regioes, updated_at: new Date().toISOString() }
     if (ficha) { await supabase.from('fichas').update(dados).eq('id', ficha.id) }
     else { await supabase.from('fichas').insert({ ...dados, cliente_id: id }) }
     setEditandoFicha(false); carregarDados()
@@ -286,6 +288,30 @@ export default function ClientePage() {
         {/* AVALIACAO */}
         {tab === 'avaliacao' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+
+            {/* Body Chart */}
+            <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '20px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                <p style={{ fontSize: '9px', color: '#ef4444', textTransform: 'uppercase', letterSpacing: '0.15em', fontWeight: 700 }}>Body Chart</p>
+                {regioes.length > 0 && (
+                  <button onClick={() => { setRegioes([]); if (ficha) supabase.from('fichas').update({ regioes_afetadas: [] }).eq('id', ficha.id) }}
+                    style={{ fontSize: '9px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.1em', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 700 }}>
+                    Limpar
+                  </button>
+                )}
+              </div>
+              <BodyChart
+                regioesSelecionadas={regioes}
+                onChange={(novasRegioes) => {
+                  setRegioes(novasRegioes)
+                  if (ficha) {
+                    supabase.from('fichas').update({ regioes_afetadas: novasRegioes }).eq('id', ficha.id)
+                  } else {
+                    supabase.from('fichas').insert({ cliente_id: id, regioes_afetadas: novasRegioes, historico_medico: '', patologias: '', medicacao: '', observacoes: '' }).select().single().then(({ data: novaFicha }) => { if (novaFicha) setFicha(novaFicha) })
+                  }
+                }}
+              />
+            </div>
 
             {/* Avaliacao Clinica */}
             <div style={{ background: '#111', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '20px' }}>
